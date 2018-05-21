@@ -1,0 +1,116 @@
+body {
+    margin: 0;
+    padding: 0;
+    font-family: sans-serif;
+}
+html, body, #root{
+    width: 100%;
+    height: 100%;
+    min-width: 1200px;
+}
+.flex-row {
+    display: flex;
+    flex-direction: row
+}
+.flex{
+    flex: 1;
+}
+.main{
+    height: 100%;
+}
+.ju-center {
+    justify-content: center
+}
+
+.ju-right {
+    justify-content: flex-end
+}
+
+.al-center {
+    align-items: center
+}
+
+.hands {
+    cursor: pointer;
+}
+
+/* 宽高 */
+
+.fill-flex {
+    flex: 1
+}
+
+/* 对齐方式 */
+
+.text-right {
+    text-align: right
+}
+.text-center{
+    text-align: center;
+}
+.hide {
+    display: none
+}
+/*form表单*/
+.query{
+   padding: 10px 0 20px 24px;
+}
+.query>div {
+    padding: 0px 5px
+}
+.form{
+    display: flex;
+    flex-direction: row;
+}
+.form>div{
+  flex: 1;
+  display: flex;
+}
+/*表格列表宽度*/
+.formdiv{
+    display: flex;
+    flex-direction: row;
+}
+.list-width{
+    width: 400px;
+    display: flex;
+}
+.flex-column{
+    display: flex;
+    flex-direction: column;
+}
+.title-width{
+    width: 70px;
+}
+.input-width{
+    width: 230px;
+}
+.form-row{
+    padding-top: 20px;
+}
+/*表格*/
+.tableList{
+    padding: 20px 0;
+}
+/*分页*/
+.Statistics{
+    display: flex;
+    flex-direction: row;
+}
+.total{
+    width: 300px;
+}
+.Pagination{
+    flex: 1;
+}
+.tableList .ant-table-thead th{
+    font-size: 12px;
+    font-weight: bold;
+    color: #000;
+    text-align: center;
+} 
+.tableList .ant-table-tbody .ant-table-row td{
+    font-size: 10px;
+    color: #000;
+    text-align: center;
+}

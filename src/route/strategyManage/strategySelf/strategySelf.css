@@ -1,0 +1,10 @@
+.ant-radio-group{
+    display: flex;
+    flex-direction: row;
+}
+.modal-form{
+    padding: 15px 0;
+}
+.ant-table-wrapper{
+    padding-bottom: 20px;
+}

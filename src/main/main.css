@@ -1,0 +1,11 @@
+.main-content {
+    padding-left: 220px;
+    padding-top:130px;
+    background: #F0F2F5;
+    height: 100%;
+    padding-right: 10px;
+}
+.main-content-item{
+    background: #fff;
+    padding: 10px 25px 0 25px; 
+}

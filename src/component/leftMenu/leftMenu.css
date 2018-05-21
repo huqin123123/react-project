@@ -1,0 +1,10 @@
+.left-menu {
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 220px;
+    background-color: #001529;
+    overflow-y: scroll;
+    z-index: 101;
+}

@@ -1,0 +1,42 @@
+.top-menu {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 70px;
+    padding-left: 220px;
+    border-bottom: 1px solid #c5c1c1;
+    background-color: #ffffff;
+    z-index: 100;
+}
+
+.top-menu-sub {
+    height: 70px;
+    padding-left: 10px;
+    padding-right: 30px;
+}
+
+.top-menu-user {
+    margin-right: 40px
+}
+.sub-menu{
+    background: #fff;
+}
+.sub-menu-item{
+    height: 40px;
+    padding: 0px 20px;
+    position: relative;
+}
+.sub-menu-close-btn{
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    display: none
+}
+.sub-menu-item:hover .sub-menu-close-btn{
+    display: block;
+}
+.sub-menu-item.active{
+    background-color: #1890FF;
+    color: #ffffff
+}
