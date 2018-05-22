@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 import './leftMenu.css';
 import { Menu,Icon } from 'antd';
 import { Link } from 'react-router-dom';
@@ -6,22 +7,18 @@ import { Link } from 'react-router-dom';
 
 //左面菜单
 export default class LeftMenu extends Component {
-    state={
-        collasped:false,
-    }
-    toggleCollapsed = () => {
-        this.setState({
-          collapsed: !this.state.collapsed,
-        });
-      }
+  static propTypes = {
+    collapsed: PropTypes.bool
+  };
     render() {
+        const { collapsed } = this.props;
         return (    
             <div className="left-menu" >
                 <Menu 
                 defaultSelectedKeys={['1']}
                 mode="inline"
                 theme="dark"
-                inlineCollapsed={this.props.collasped}
+                inlineCollapsed={collapsed}
                 >
                     <Menu.SubMenu  title={<span> <Icon type="user"  />用户管理</span>}>
                         <Menu.Item><Link to="/employeeList" key="1"> 员工列表</Link></Menu.Item>

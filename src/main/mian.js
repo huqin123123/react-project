@@ -8,6 +8,9 @@ import { RouteEnum } from '../enum/routeEnum';
 
 
 export default class Main extends Component {
+  state = {
+    collasped: false,
+  };
     //获取content组件
     componentDidUpdate = () => {
         const dom = this.refs["main-content"];
@@ -32,11 +35,20 @@ export default class Main extends Component {
         }
 
     }
+   toggleCollapsed = () => {
+     this.setState({
+       collapsed: !this.state.collapsed,
+     });
+   }
     render() {
         return (
             <div className="main" >
-                <TopMenu target={this.props.history.push} path={this.props.history.location.pathname} />
-                <LeftMenu />
+                <TopMenu
+                  toggleCollapsed={this.toggleCollapsed}
+                  collapsed={this.state.collapsed}
+                  target={this.props.history.push}
+                  path={this.props.history.location.pathname} />
+                <LeftMenu collapsed={this.state.collapsed} />
                 <div className="main-content" ref="main-content"  onChange={this.onEdit} >
                     <div className="main-content-item" data-key="/userManage"  >
                         {/* <StaffManage /> */}

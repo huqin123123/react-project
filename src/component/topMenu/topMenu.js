@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 import ReactDOM from 'react-dom';
 import './topMenu.css';
 import { Icon, } from 'antd';
@@ -9,14 +10,19 @@ import { RouteEnum } from '../../enum/routeEnum';
 
 //顶部菜单
 export default class TopMenu extends Component {
+    static propTypes = {
+      toggleCollapsed: PropTypes.any,
+      collasped: PropTypes.bool
+    }
     render() {
+        const { collapsed, toggleCollapsed } = this.props;
         return (
             <div className="top-menu" >
                 <div className="top-menu-sub flex-row al-center" >
                     <div className="hands">
                         <Icon  
-                        type={this.props.collasped? 'menu-unfold' : 'menu-fold'}
-                        // onClick={}
+                        type={collapsed ? 'menu-unfold' : 'menu-fold'}
+                        onClick={toggleCollapsed}
                         style={{ fontSize: 18 }}/>
                     </div>
                     <div className="fill-flex flex-row ju-right" >
