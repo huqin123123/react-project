@@ -19,6 +19,7 @@ import VersionManagement from '../route/systemManage/versionManagement/versionMa
 
 
 export const RouteEnum = [
+       
         { route: "/employeeList", title: "员工列表", component: <EmployeeList/> },
         { route: "/personalUser", title: "个人用户", component: <PersonalUser/>},
         { route: "/strategySelf", title: "自营策略", component: <StrategySelf/> },

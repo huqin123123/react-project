@@ -4,11 +4,15 @@ import './topMenu.css';
 import { Icon, } from 'antd';
 import $ from 'jquery';
 import { RouteEnum } from '../../enum/routeEnum';
-// import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 
 //顶部菜单
 export default class TopMenu extends Component {
+    handClick=()=>{
+      
+
+    }
     render() {
         return (
             <div className="top-menu" >
@@ -20,7 +24,7 @@ export default class TopMenu extends Component {
                         style={{ fontSize: 18 }}/>
                     </div>
                     <div className="fill-flex flex-row ju-right" >
-                        <div className="top-menu-user" >当前用户：<a>管理员</a> <a>退出</a> </div>
+                        <div className="top-menu-user" >当前用户：<a>管理员</a> <Link to="/login">退出</Link> </div>
                         <div>用户角色：超级管理员</div>
                     </div>
                 </div>

@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { Button, Input, Form, } from 'antd';
 import './login.css';
-class Login extends Component {
+export default class Login extends Component {
     render() {
         return (
             <div>

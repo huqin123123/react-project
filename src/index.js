@@ -2,7 +2,8 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
 import registerServiceWorker from './registerServiceWorker';
-import Main from './main/mian';
+import Main from './main/main';
+// import App from './login/login'; 
 import { BrowserRouter as Router, Route } from 'react-router-dom';
 
 
