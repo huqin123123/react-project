@@ -1,0 +1,13 @@
+.myUser-detail{
+    width: 100%;
+}
+.myUser-detail .myUser-table{
+    width: 80%;
+    margin-left: 70px;
+}
+.myUser-detail .number td{
+    color: #B51D1A;
+}
+.myUser-detail .title td{
+    color: #AEAEAE;
+}

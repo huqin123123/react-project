@@ -1,6 +1,8 @@
 import React, { Component } from 'react';
-import { Button, Divider, Input, Modal, Form, Cascader, Icon, Table, Pagination, Menu, Dropdown } from 'antd';
+import {LocaleProvider, Button, Divider, Input, Modal, Form, Cascader, Icon, Table, Pagination, Menu, Dropdown } from 'antd';
 import './versionManagement.css';
+import zhCN from 'antd/lib/locale-provider/zh_CN';
+//版本管理
 const { TextArea } = Input;
 const options = [{
     value: 'Android',
@@ -48,7 +50,6 @@ class VersionManagement extends Component {
         this.setState({
             visible1: true,
         });
-        this.props.form.resetFields();
     }
     showModal2 = () => {
         this.setState({
@@ -59,7 +60,7 @@ class VersionManagement extends Component {
         this.setState({
             visible3: true,
         });
-      
+
     }
     handleOk = (e) => {
         this.setState({
@@ -92,12 +93,15 @@ class VersionManagement extends Component {
         const { getFieldDecorator } = this.props.form;
         const formItemLayout = {
             labelCol: { span: 4 },
-            wrapperCol: { span: 12 },
+            wrapperCol: { span: 14 },
         };
         const menu = (
             <Menu>
                 <Menu.Item>
-                    <a onClick={this.showModal2}>发布/取消版本</a>
+                    <a onClick={this.showModal2}>取消发布</a>
+                </Menu.Item>
+                <Menu.Item>
+                    <a onClick={this.showModal3}>发布</a>
                 </Menu.Item>
             </Menu>
         );
@@ -131,16 +135,17 @@ class VersionManagement extends Component {
             key: 'operation',
             render: text => (
                 <Dropdown overlay={menu}>
-                    <a><Icon type="menu-fold" style={{ fontSize: 15 }} /> </a>
+                    <Button style={{ marginLeft: 8 }}>
+                        操作 <Icon type="down" />
+                    </Button>
                 </Dropdown>
             )
         }];
         return (
             <div className="VersionManagement">
-                <div className="employeeList-query">
-                    <Button type="primary" icon="plus" onClick={this.showModal1}>添加版本</Button>
-                    <Divider />
-
+                <div className="VersionManagement-query">
+                    <Button type="primary" icon="plus" onClick={this.showModal1} className="primary-btn">添加版本</Button>
+                    <Divider style={{ marginTop: 15, marginBottom: 15 }} />
                 </div>
                 <div className="tableList">
                     <Table pagination={false} columns={columns} dataSource={data} bordered />
@@ -148,7 +153,9 @@ class VersionManagement extends Component {
                 <div className="Statistics">
                     <span className="total">共 400 条记录 第 1 / 80 页</span>
                     <span className="Pagination text-right">
-                        <Pagination total={50} showSizeChanger showQuickJumper hideOnSinglePage />
+                        <LocaleProvider locale={zhCN}>
+                            <Pagination total={50} showSizeChanger showQuickJumper hideOnSinglePage defaultCurrent={1} />
+                        </LocaleProvider>
                     </span>
                 </div>
                 <Modal title="添加版本"
@@ -158,6 +165,7 @@ class VersionManagement extends Component {
                     confirmLoading={confirmLoading}
                     onCancel={this.handleCancel}
                     cancelText="取消"
+                    destroyOnClose={true}
                 >
                     <Form
                         ref="form"
@@ -166,20 +174,13 @@ class VersionManagement extends Component {
                     >
                         <Form.Item
                             {...formItemLayout}
-                            label="终端"
+                            label="终端："
                         >
-                            {getFieldDecorator('terminal', {
-                                rules: [
-                                    { required: true, message: '请输入' },
-                                ],
-                            })(
-                                <Cascader options={options} placeholder="请选择" />
-                            )}
+                            <Cascader options={options} placeholder="请选择" />
                         </Form.Item>
                         <Form.Item
                             {...formItemLayout}
-                            label="版本名"
-                            hasFeedback
+                            label="版本名："
                         >
                             {getFieldDecorator('version name', {
                                 rules: [
@@ -191,8 +192,7 @@ class VersionManagement extends Component {
                         </Form.Item>
                         <Form.Item
                             {...formItemLayout}
-                            label="版本号"
-                            hasFeedback
+                            label="版本号："
                         >
                             {getFieldDecorator('version number', {
                                 rules: [
@@ -204,8 +204,7 @@ class VersionManagement extends Component {
                         </Form.Item>
                         <Form.Item
                             {...formItemLayout}
-                            label="链接地址"
-                            hasFeedback
+                            label="链接地址："
                         >
                             {getFieldDecorator('dress', {
                                 rules: [
@@ -217,26 +216,24 @@ class VersionManagement extends Component {
                         </Form.Item>
                         <Form.Item
                             labelCol={{ span: 4 }}
-                            wrapperCol={{ span: 16 }}
-                            label="备注"
+                            wrapperCol={{ span: 20 }}
+                            label="备注："
                         >
-                            {getFieldDecorator('Remarks', {})(
-                                <TextArea rows={4} placeholder="支持富文本" />
-                            )}
+                            <TextArea rows={4} placeholder="多行文本" />
                         </Form.Item>
                     </Form>
                 </Modal>
-                <Modal title="【终端：版本号】发布版本"
+                <Modal title="【终端：版本号】取消发布"
                     visible={this.state.visible2}
                     onOk={this.handleOk}
                     okText="确认"
                     confirmLoading={confirmLoading}
-                    onCancel={this.showModal3}
+                    onCancel={this.handleCancel}
                     cancelText="取消"
                 >
-                    <p>确认发布版本？</p>
+                    <p>确认取消发布版本？</p>
                 </Modal>
-                <Modal title="【终端：版本号】取消发布"
+                <Modal title="【终端：版本号】发布版本"
                     visible={this.state.visible3}
                     onOk={this.handleOk}
                     okText="确认"
@@ -244,7 +241,7 @@ class VersionManagement extends Component {
                     onCancel={this.handleCancel}
                     cancelText="取消"
                 >
-                    <p>确认取消发布此版本</p>
+                    <p>确认发布此版本？</p>
                 </Modal>
             </div >
         );

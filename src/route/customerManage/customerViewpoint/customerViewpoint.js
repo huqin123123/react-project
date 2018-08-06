@@ -164,7 +164,7 @@ class CustomerViewpoint extends Component {
                                     disabledDate={this.disabledStartDate}
                                     format="YYYY-MM-DD"
                                     value={startValue}
-                                    placeholder="Start"
+                                    placeholder="请输入"
                                     onChange={this.onStartChange}
                                     onOpenChange={this.handleStartOpenChange}
                                     className="input-width"
@@ -173,7 +173,7 @@ class CustomerViewpoint extends Component {
                                     disabledDate={this.disabledEndDate}
                                     format="YYYY-MM-DD "
                                     value={endValue}
-                                    placeholder="End"
+                                    placeholder="请输入"
                                     onChange={this.onEndChange}
                                     open={endOpen}
                                     onOpenChange={this.handleEndOpenChange}

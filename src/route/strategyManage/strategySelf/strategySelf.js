@@ -1,109 +1,326 @@
 import React, { Component } from 'react';
-import { Button, Divider, Input, Cascader, Form, Icon, Table, Pagination, Menu, Dropdown, Checkbox, Modal, Row, Col, Radio } from 'antd';
+import { LocaleProvider, Button, Divider, Input, Cascader, Form, Icon, Table, Pagination, Menu, Dropdown, Checkbox, Modal, Row, Col, Radio, message } from 'antd';
+import zhCN from 'antd/lib/locale-provider/zh_CN';
 import './strategySelf.css';
+import $ from 'jquery';
+import ServerHandle from '../../../utils/ApiHandle';
+import Emit from '../../../utils/Emit';
+
+/**自营策略 */
 const options = [{
-    value: '已上架',
-    label: '已上架'
+    value: '上架',
+    label: '上架'
 }, {
-    value: '已下架',
-    label: '已下架'
+    value: '下架',
+    label: '下架'
 }, {
-    value: '未上架',
-    label: '未上架'
-}, {
-    value: '已弃用',
-    label: '已弃用'
-}];
-
-const data = [{
-    key: '1',
-    id: '1',
-    name: '夕阳红',
-    author: '股海老刘',
-    price: '￥10.00/月',
-    capacity: '10万',
-    share: '所有用户',
-    experience: '15日',
-    date: '2018-04-05',
-    state: '已上架',//蓝色
-
-}, {
-    key: '2',
-    id: '2',
-    name: '海选换仓',
-    author: '许阳',
-    price: '￥10.00/月',
-    capacity: '20万',
-    share: '所有机构',
-    experience: '无',
-    date: '2018-04-05',
-    state: '已下架',
-}, {
-    key: '3',
-    id: '3',
-    name: 'JC001',
-    author: 'lovely_tr',
-    price: '￥10.00/月',
-    capacity: '10万',
-    share: '-',
-    experience: '无',
-    date: '2018-04-05',
-    state: '已弃用',
+    value: '弃用',
+    label: '弃用'
 }];
 
 class StrategySelf extends Component {
-    /**
-     * 对话框
-     */
-    state = {
-        modal1visible: false,
-        modal2visible: false,
-        modal4visible: false,
-        modal5visible: false,
-        confirmLoading: false,
-        value: 3,
-        checked:false,
+    constructor(props) {
+        super(props);
+        this.showModal1 = this.showModal1.bind(this);
+        this.showModal2 = this.showModal2.bind(this);
+        this.showModal3 = this.showModal3.bind(this);
+        this.showModal4 = this.showModal4.bind(this);
+        this.showModal5 = this.showModal5.bind(this);
+        this.bindData = this.bindData.bind(this);
+        this.searchStrategy = this.searchStrategy.bind(this);
+        this.addAdvider = this.addAdvider.bind(this);
+        this.handleshelves = this.handleshelves.bind(this);
+        this.disusehandle = this.disusehandle.bind(this);
+        this.editHandle = this.editHandle.bind(this);
+        this.shareHandle = this.shareHandle.bind(this);
+        this.numChange = this.numChange.bind(this);//页码改变
+        this.onShowSizeChange = this.onShowSizeChange.bind(this);//每页条数改变
+        this.shareSizeChange = this.shareSizeChange.bind(this);
+        this.shareNumChange = this.shareNumChange.bind(this);
+        this.shareQuery = this.shareQuery.bind(this);
+        this.onSelectAll=this.onSelectAll.bind(this);
+        this.state = {
+            //visible对话框是否可见
+            modal1visible: false,
+            modal2visible: false,
+            modal3visible: false,
+            modal4visible: false,
+            modal5visible: false,
+            confirmLoading: false,
+            value: 3,
+            //参与体验
+            checked: false,
+            //自营策略列表
+            dataList: [],
+            //策略列表总数
+            count: 0,
+            //分享策略总数
+            shareCount: 0,
+            //策略id
+            adviserId: '',
+            //上/下架状态  1-上架 2-下架 3-弃用
+            status: '',
+            //是否推荐所有客户经理id
+            allChecked: '0',
+            //客户经理对象列表
+            managerList: [],
+            //推荐的客户经理id集合
+            userIds: [],
+            //策略列表分页页数
+            num: 1,
+            //策略列表每页条数
+            size: 20,
+            //
+            selectedRowKeys: [],
+        }
     }
-    showModal1 = () => {//添加策略
-        this.setState({ modal1visible: true ,checked:false});
+    showModal1 = (id) => {
+        //添加策略
+        this.setState({ modal1visible: true, checked: false });
     }
-    showModal2 = () => {//上/下架
-        this.setState({ modal2visible: true });
-    }
-    showModal4 = () => {//编辑
-        this.setState({ modal4visible: true });
-    }
-    showModal5 = () => {//分享策略
-        this.setState({ modal5visible: true });
-    }
-    handleOk = (e) => {
-        this.setState({
-            confirmLoading: true,
-        });
-        setTimeout(() => {
-            this.setState({
-                modal1visible: false,
-                modal2visible: false,
-                modal4visible: false,
-                modal5visible: false,
-                confirmLoading: false,
+    showModal2 = (id, state) => {
+        //上/下架
+        this.setState({ modal2visible: true, adviserId: id, status: state },
+            () => {
+                console.log(this.state.adviserId, this.state.status)
             });
-        }, 2000);
+    }
+    showModal3 = (id, state) => {
+        //弃用
+        this.setState({ modal3visible: true, adviserId: id, status: state },
+            () => {
+                console.log(this.state.adviserId, this.state.status)
+            });
+    }
+    showModal4 = (id) => {
+        //编辑策略(查询单个策略)
+        this.setState({ modal4visible: true, adviserId: id,checked:false },
+            () => {
+                ServerHandle.GET({
+                    url: '/web/strategys/getStrategys',
+                    data: { id: this.state.adviserId }
+                }).then(result => {
+                    if (result.success) {
+                        $('#experience').val(result.data.experienceDay);
+                        $('#strategyName').val(result.data.strategyName);
+                        $("#publisherName").val(result.data.publisherName);
+                        $('#price').val(result.data.price);
+                        $('#totalPrice').val(result.data.totalPrice);
+                    }
+                })
+            });
+
+    }
+    showModal5 = (id) => {
+        //分享策略列表接口
+        console.log(id)
+        ServerHandle.GET({
+            url:'/web/strategys/pushStrategy',
+            data:{strategysId:id}
+        }).then(result=>{
+            if(result.success){
+                console.log(result)
+            }
+        })
+        let managerMsg = $('#managerMsg').val()
+        this.setState({ modal5visible: true, adviserId: id });
+        ServerHandle.GET({
+            url: '/web/strategys/pageStrategysPushVO',
+            data: {
+                pageNum: this.state.num,
+                pageSize: this.state.size,
+                managerMsg: managerMsg,
+                strategysId:id,
+            }
+        }).then(result => {
+            if (result.success) {
+                console.log(result)
+                this.setState({ managerList: result.data, shareCount: result.count })
+            }
+        })
+    }
+    componentDidMount() {    
+        this.bindData();
+    }
+    bindData() {
+        //自营策略列表
+        let txt = $("#strategy").val();
+        let status = $('.strategySelf .ant-cascader-picker-label').text();
+        ServerHandle.POST({
+            url: '/web/strategys/pageStrategysSelfSupportQueryVO',
+            data: { 
+                pageNum: this.state.num,
+                pageSize: this.state.size, 
+                strategyMsg: txt, 
+                status: status === "上架" ? 1 : (status === "下架" ? 2 : (status === "弃用") ? 3 : '') 
+            }
+        }).then(result => {
+            if (result.success) {
+                this.setState({ dataList: result.data, count: result.count });
+                // console.log(result)
+            }
+        })
+    }
+    searchStrategy() {
+        //策略查询
+        this.setState({ num: 1, size: 20 })
+        this.bindData();
+    }
+    addAdvider(e) {
+        //添加策略接口
+        e.preventDefault();
+        this.props.form.validateFields((err, values) => {
+            console.log('Received values of form: ', values);
+        });
+        var experience = $('#experienceDay').val();
+        var strategyName = $('#strategyName').val();
+        var publisherName = $("#publisherName").val();
+        var price = $('#price').val();
+        var totalPrice = $("#totalPrice").val()
+        console.log(experience, strategyName);
+        ServerHandle.POST({
+            url: '/web/strategys/addStrategys',
+            data: {
+                isExperience: this.state.checked ? "1" : "2",
+                strategyName: strategyName,
+                publisherName: publisherName,
+                experienceDay: experience,
+                price: price,
+                totalPrice: totalPrice,
+            }
+        }).then(result => {
+            if (result.success) {
+                this.setState({ confirmLoading: true })
+                setTimeout(() => {
+                    this.setState({
+                        modal1visible: false,
+                        confirmLoading: false,
+                    });
+                    message.success("添加成功")
+                }, 2000)
+            } else {
+                message.error("添加失败");
+                // this.setState({modal1visible:false})
+            }
+        })
+    }
+    handleshelves() {
+        //上下架操作
+        ServerHandle.POST({
+            url: '/web/strategys/shelfDropStrategys',
+            data: { id: this.state.adviserId }
+        }).then(result => {
+            if (result.success) {
+                this.setState({
+                    confirmLoading: true,
+                });
+                setTimeout(() => {
+                    this.setState({
+                        modal2visible: false,
+                        confirmLoading: false,
+                    });
+                    message.success(this.state.status === "上架" ? "下架成功" : "上架成功");
+                    this.bindData();
+                }, 2000);
+            } else {
+                message.error(this.state.status === '弃用' ? "禁止操作" : (this.state.status === "上架" ? "下架失败" : "上架失败"))
+                this.setState({ modal2visible: false, });
+            }
+        })
+    }
+    disusehandle() {
+        //弃用操作接口
+        ServerHandle.POST({
+            url: '/web/strategys/discardStrategys',
+            data: { id: this.state.adviserId }
+        }).then(result => {
+            if (result.success) {
+                this.setState({
+                    confirmLoading: true,
+                });
+                setTimeout(() => {
+                    this.setState({
+                        modal3visible: false,
+                        confirmLoading: false,
+                    });
+                    message.success("弃用成功");
+                    this.bindData();
+                }, 2000);
+            } else {
+                message.error(this.state.status === '弃用' ? "禁止操作" : (this.state.status === '上架' ? '请下架再操作弃用' : '弃用失败'));
+                this.setState({ modal3visible: false, });
+            }
+        })
+    }
+    editHandle(e) {
+        //编辑策略接口
         e.preventDefault();
         this.props.form.validateFields((err, values) => {
         });
+        var experience = $('#experience').val();
+        var strategyName = $('#strategyName').val();
+        var publisherName = $("#publisherName").val();
+        var price = $('#price').val();
+        var totalPrice = $("#totalPrice").val()
+        ServerHandle.POST({
+            url: '/web/strategys/editStrategys',
+            data: {
+                id: this.state.adviserId,
+                isExperience: this.state.checked ? "1" : "2",
+                strategyName: strategyName,
+                publisherName: publisherName,
+                experienceDay: experience,
+                price: price,
+                totalPrice: totalPrice,
+            }
+        }).then(result => {
+            if (result.success) {
+                this.setState({
+                    confirmLoading: true,
+                });
+                setTimeout(() => {
+                    this.setState({
+                        modal4visible: false,
+                        confirmLoading: false,
+                    });
+                    message.success("编辑成功");
+                    this.bindData();
+                }, 2000);
+            } else {
+                message.error("编辑失败");
+                // this.setState({modal4visible:false})
+            }
+        })
+    }
+    shareHandle() {
+        //推送(分享)客户或客户经理策略接口
+        // console.log(this.state.allChecked)
+        ServerHandle.POST({
+            url: '/web/strategys/pushStrategys',
+            data: {
+                strategysId: this.state.adviserId,
+                userIds: this.state.userIds,
+                allChecked:this.state.allChecked,
+                selectSharing: this.state.value === 3 ? '3' :(this.state.value === 2 ? '2' :'1'),
+            }
+        }).then(result => {
+            if (result.success) {
+                console.log(result)
+                message.success("分享策略成功");
+                setTimeout(()=>{
+                    // Emit.emit("target",'/index/strategySelf');
+                this.setState({modal5visible: false});                 
+                },3000)
+            }
+        })
     }
     handleCancel = () => {
         this.setState({
             modal1visible: false,
             modal2visible: false,
+            modal3visible: false,
             modal4visible: false,
             modal5visible: false,
-        });
-    }
-    handleSearch = (e) => {
-        e.preventDefault();
-        this.props.form.validateFields((err, values) => {
         });
     }
     handleReset = () => {
@@ -113,207 +330,289 @@ class StrategySelf extends Component {
         this.setState({
             value: e.target.value,
         });
+        if (e.target.value === 1 || e.target.value === 2) {
+            $('.onlyready input').addClass('ant-input-disabled');
+            $('.ant-checkbox').addClass('ant-checkbox-disabled');
+            $('.ant-checkbox-disabled input').attr('disabled', true);
+        } else if (e.target.value === 3) {
+            $('.onlyready input').removeClass('ant-input-disabled');
+            $('.ant-checkbox').removeClass('ant-checkbox-disabled');
+            $('.ant-checkbox input').removeAttr('disabled', false);
+        }
     }
-    handleCheck = (e) =>{
+    //参与体验单选框
+    handleCheck = (e) => {
+        console.log(e)
         this.setState({
-            checked:e.target.checked
+            checked: e.target.checked,
         })
     }
+    //策略列表
+    numChange(page, pageSize) {
+        console.log(page, pageSize)
+        this.setState({
+            num: page,
+            size: pageSize,
+        }, () => {
+            console.log(this.state.num, this.state.size)
+            this.bindData();
+        })
+    }
+    onShowSizeChange(current, size) {
+        console.log(current, size)
+        this.setState({
+            num: current,
+            size: size,
+        }, () => {
+            console.log(this.state.num, this.state.size)
+            this.bindData();
+        })
+    }
+    //分享策略
+    shareNumChange(page, pageSize) {
+        console.log(page, pageSize)
+        this.setState({
+            num: page,
+            size: pageSize,
+        }, () => {
+            console.log(this.state.num, this.state.size)
+            this.showModal5();
+        })
+    }
+    shareSizeChange(current, size) {
+        console.log(current, size)
+        this.setState({
+            num: current,
+            size: size,
+        }, () => {
+            console.log(this.state.num, this.state.size)
+            this.showModal5();
+        })
+    }
+    shareQuery() {
+        //分享策略查询
+        this.setState({ userIds: [] })
+        console.log(this.state.adviserId)
+        this.showModal5(this.state.adviserId);
+        this.setState({ num: 1 })
+    }
+    onSelectAll(selected, selectedRows, changeRows){
+        // console.log(selected, selectedRows, changeRows)
+    }
     render() {
-        const menu = (
-            <Menu>
-                <Menu.Item>
-                    <a onClick={this.showModal2}>上/下架</a>
-                </Menu.Item>
-                <Menu.Item>
-                    <a>弃用</a>
-                </Menu.Item>
-                <Menu.Item>
-                    <a onClick={this.showModal4} >编辑</a>
-                </Menu.Item>
-                <Menu.Item>
-                    <a onClick={this.showModal5}>分享</a>
-                </Menu.Item>
-            </Menu>
-        );
-        const columns = [{
-            title: '策略ID',
-            dataIndex: 'id',
-            key: 'id',
-        }, {
-            title: '策略名称',
-            dataIndex: 'name',
-            key: 'name',
-        }, {
-            title: '策略作者',
-            dataIndex: 'author',
-            key: 'author',
-        }, {
-            title: '分享价格',
-            dataIndex: 'price',
-            key: 'price',
-        }, {
-            title: '资金容量',
-            dataIndex: 'capacity',
-            key: 'capacity',
-        }, {
-            title: '策略分享',
-            dataIndex: 'share',
-            key: 'share',
-        }, {
-            title: '策略体验',
-            dataIndex: 'experience',
-            key: 'experience',
-        }, {
-            title: '添加日期',
-            dataIndex: 'date',
-            key: 'date',
-        }, {
-            title: '状态',
-            dataIndex: 'state',
-            key: 'state',
-        }, {
-            title: '操作',
-            dataIndex: 'operation',
-            key: 'operation',
-            render: text => (
-                <Dropdown overlay={menu}>
-                    <a ><Icon type="menu-fold" style={{ fontSize: 15 }} /></a>
-                </Dropdown>
-            )
-        }];
-        const columnsM = [{
-            title: '序号',
-            dataIndex: 'number',
-        }, {
-            title: '真实姓名',
-            dataIndex: 'name',
-        }, {
-            title: '登录手机',
-            dataIndex: 'iPhone',
-        }, {
-            title: '分享状态',
-            dataIndex: 'state',
-        }];
-        const dataM = [{
-            key: '1',
-            number: '1',
-            name: '王小明01',
-            iPhone: '185213516200',
-            state: '已分享'
-        }, {
-            key: '2',
-            number: '2',
-            name: '王小明01',
-            iPhone: '185213516200',
-            state: '-'
-        }, {
-            key: '3',
-            number: '3',
-            name: '王小明01',
-            iPhone: '185213516200',
-            state: '-'
-        }, {
-            key: '4',
-            number: '4',
-            name: '王小明01',
-            iPhone: '185213516200',
-            state: '-'
-        }];
-        const { confirmLoading } = this.state;
+        const { confirmLoading, dataList, managerList, count, shareCount, status } = this.state;
         const { getFieldDecorator } = this.props.form;
         const formItemLayout = {
             labelCol: { span: 4 },
-            wrapperCol: { span: 12 },
+            wrapperCol: { span: 14 },
         }
         const rowSelection = {
             onChange: (selectedRowKeys, selectedRows) => {
+                this.setState({ userIds: selectedRowKeys },
+                )
             },
-            // getCheckboxProps: record => ({
-            //     disabled: record.name === '王小明01', // Column configuration not to be checked
-            //     name: record.name,
-            //   }),
-        }
+
+        };
+        const columns = [{
+                title: '策略ID',
+                key: 'id',
+                render: (text, item) => {
+                    return (item.id || '-')
+                }
+            }, {
+                title: '策略名称',
+                key: 'strategyName',
+                render: (text, item) => {
+                    return (item.strategyName || '-')
+                }
+            }, {
+                title: '策略作者',
+                key: 'publisherName',
+                render: (text, item) => {
+                    return (item.publisherName || '-')
+                }
+            }, {
+                title: '分享价格',
+                key: 'price',
+                render: (text, item) => {
+                    return (item.price || '-')
+                }
+            }, {
+                title: '资金容量',
+                key: 'totalPrice',
+                render: (text, item) => {
+                    return (item.totalPrice || '-')
+                }
+            }, {
+                title: '策略分享',
+                key: 'share',
+                render: (text, item) => {
+                    return (item.sharingGroup ||'-')
+                }
+            }, {
+                title: '策略体验',
+                key: 'experienceDay',
+                render: (text, item) => {
+                    return (!(item.experienceDay) ? "无" : item.experienceDay)
+                }
+            }, {
+                title: '添加日期',
+                key: 'date',
+                render: (text, item) => {
+                    return (item.createTime || '-')
+                }
+            }, {
+                title: '状态',
+                key: 'status',
+                render: (text, item) => {
+                    return (item.status)
+                }
+            }, {
+                title: '操作',
+                key: 'operation',
+                render: text => (
+                    <Dropdown disabled={text.status === "弃用"} overlay={
+                        <Menu>
+                            <Menu.Item>
+                                <a onClick={() => {this.showModal2(text.id, text.status); }}>{text.status ==="下架"?"上架" :"下架"}</a>
+                            </Menu.Item>
+                            <Menu.Item>
+                                <a onClick={() => { this.showModal3(text.id, text.status) }}>弃用</a>
+                            </Menu.Item>
+                            <Menu.Item>
+                                <a onClick={() => { this.showModal4(text.id) }}>编辑</a>
+                            </Menu.Item>
+                            <Menu.Item>
+                                <a onClick={() => { this.showModal5(text.id) }} >分享</a>
+                            </Menu.Item>
+                        </Menu>
+                    }>
+                        <Button style={{ marginLeft: 8 }}>
+                            操作 <Icon type="down" />
+                        </Button>
+                    </Dropdown>
+                )
+        }];
+        const columnsM = [{
+                title: '序号',
+                key: "number",
+                render: (text, item, key) => { return key + 1 }
+            }, {
+                title: '真实姓名',
+                key: 'realName',
+                render: (text) => {
+                    return (text.realName || '-')
+                }
+            }, {
+                title: '登录手机',
+                key: 'telphone',
+                render: (text) => {
+                    return (text.telphone || '-')
+                }
+            }, {
+                title: '分享状态',
+                key: 'pushIds',
+                render: (text) => {
+                    //text.pushIds策略分享过的客户经理id
+                    //text.id客户经理id
+                    let pushIds =text.pushIds;
+                    return (pushIds.indexOf(text.id) === -1 ? "-" : "已分享")
+                    // return ( text.id )
+                    
+                }
+        }];
         return (
             <div className="strategySelf">
                 <div className="strategy-query">
-                    <Button type="primary" icon="plus" onClick={this.showModal1}>添加策略</Button>
-                    <Divider />
+                    <Button type="primary" icon="plus" onClick={this.showModal1} className="primary-btn">添加策略</Button>
+                    <Divider style={{ marginTop: 15, marginBottom: 15 }} />
                 </div>
                 <Form
-                    ref="form"
-                    className="strategy-form form"
-                    onSubmit={this.handleSearch}
-                >
-                    <div className="strategy-form-input input al-center ">
+                        ref="form"
+                        className="strategy-form form"
+                    >
+                    <div className="strategy-form-input  al-center ">
                         <span className="text-right title-width">策略：</span>
                         <span className="input-width" >
-                            {getFieldDecorator(`field-${2}`, {})(
+                            {getFieldDecorator(`strategy`, {})(
                                 <Input placeholder="请输入策略名称或ID" />
                             )}
                         </span>
                     </div>
-                    <div className="strategy-form-Cascader cascader al-center">
+                    <div className="strategy-form-Cascader cascader al-center ">
                         <span className="text-right title-width">状态：</span>
                         <span className="input-width">
-                            {getFieldDecorator(`field-${3}`, {})(
+                            {getFieldDecorator(`status`, {})(
                                 <Cascader options={options} placeholder="请选择" />
                             )}
                         </span>
                     </div>
                     <div className="strategy-form-Button">
-                        <Button type="primary" htmlType="submit">查询</Button>
+                        <Button type="primary" htmlType="submit" onClick={this.searchStrategy}>查询</Button>
                         <Button style={{ marginLeft: 8 }} onClick={this.handleReset}>重置</Button>
                     </div>
                 </Form>
-                <div className="tableList">
-                    <Table pagination={false} columns={columns} dataSource={data} bordered />
+                <Divider style={{ marginTop: 15, marginBottom: 15 }} />
+                <div className="tableList strategyTable">
+                    <Table rowKey="id" id="strategyTable" pagination={false} columns={columns} dataSource={dataList} bordered  onSelectAll={this.onSelectAll}/>
                 </div>
                 <div className="Statistics">
-                    <span className="total">共 400 条记录 第 1 / 80 页</span>
+                    <span className="total">共{count}条记录 第 {this.state.num} / {Math.ceil(count / this.state.size)} 页</span>
                     <span className="Pagination text-right">
-                        <Pagination total={50} showSizeChanger showQuickJumper hideOnSinglePage />
+                        <LocaleProvider locale={zhCN}>
+                            <Pagination
+                                total={count}
+                                showSizeChanger={true}
+                                showQuickJumper={true}
+                                hideOnSinglePage={false}
+                                current={this.state.num}
+                                pageSize={this.state.size}
+                                onChange={this.numChange}
+                                onShowSizeChange={this.onShowSizeChange}
+                            />
+                        </LocaleProvider>
                     </span>
                 </div>
                 {/* 对话框 */}
                 <Modal title="添加策略"
-                    visible={this.state.modal1visible}
-                    onOk={this.handleOk}
-                    okText="保存"
-                    confirmLoading={confirmLoading}
-                    onCancel={this.handleCancel}
-                    cancelText="取消"
-                    destroyOnClose={true}
-                >
+                        visible={this.state.modal1visible}
+                        onOk={this.addAdvider}
+                        okText="保存"
+                        confirmLoading={confirmLoading}
+                        onCancel={this.handleCancel}
+                        cancelText="取消"
+                        destroyOnClose={true}
+                    >
                     <Form
                         ref="form"
                         className="flex-column"
-                        onSubmit={this.handleOk}
                     >
                         <Form.Item
                             labelCol={{ span: 4 }}
                             wrapperCol={{ span: 20 }}
-                            label="免费体验"
+                            label="免费体验："
                         >
-                            <Row gutter={15}>
-                                <Col span={15}>
-                                    {getFieldDecorator('experience', {
-                                        rules: [{ required: true, message: '请输入' }],
+                            <Row gutter={12}>
+                                <Col span={17}>
+                                    {getFieldDecorator('experienceDay', {
+                                        rules: [{
+                                            required: false,
+                                            message: '请输入'
+                                        }],
                                     })(
-                                        <Input placeholder="请输入" disabled={this.state.checked?false:true} />
+                                        <Input type='number' placeholder="请输入" disabled={this.state.checked ? false : true} />
                                     )}
                                 </Col>
-                                <Col span={8}>
+                                <Col span={7}>
                                     <Checkbox ref="check" checked={this.state.checked} onChange={this.handleCheck}>参与体验</Checkbox>
                                 </Col>
                             </Row>
                         </Form.Item>
                         <Form.Item
                             {...formItemLayout}
-                            label="策略名称"
-                            hasFeedback
+                            label="策略名称："
                         >
-                            {getFieldDecorator('Policy name', {
+                            {getFieldDecorator('strategyName', {
                                 rules: [
                                     { required: true, message: '请输入' },
                                 ],
@@ -323,97 +622,107 @@ class StrategySelf extends Component {
                         </Form.Item>
                         <Form.Item
                             {...formItemLayout}
-                            label="策略作者"
-                            hasFeedback
+                            label="策略作者："
                         >
-                            {getFieldDecorator('Strategic author', {
+                            {getFieldDecorator('publisherName', {
                                 rules: [
                                     { required: true, message: '请输入' },
                                 ],
                             })(
-                                <Input placeholder="请输入"  />
+                                <Input placeholder="请输入" />
                             )}
                         </Form.Item>
                         <Form.Item
                             labelCol={{ span: 4 }}
                             wrapperCol={{ span: 20 }}
-                            label="分析价格"
+                            label="分析价格："
                         >
-                            <Row gutter={15}>
-                                <Col span={15}>
+                            <Row gutter={12}>
+                                <Col span={17}>
                                     {getFieldDecorator('price', {
                                         rules: [{ required: true, message: '请输入' }],
                                     })(
-                                        <Input placeholder="请输入" />
+                                        <Input type='number' placeholder="请输入" />
                                     )}
                                 </Col>
-                                <Col span={4}>
+                                <Col span={7}>
                                     <span>/月</span>
                                 </Col>
                             </Row>
                         </Form.Item>
                         <Form.Item
                             {...formItemLayout}
-                            label="资金容量"
-                            hasFeedback
+                            label="资金容量："
                         >
-                            {getFieldDecorator('Biaoti', {
+                            {getFieldDecorator('totalPrice', {
                                 rules: [
                                     { required: true, message: '请输入' },
                                 ],
                             })(
-                                <Input placeholder="请输入" />
+                                <Input type='number' placeholder="请输入" />
                             )}
                         </Form.Item>
                     </Form>
                 </Modal>
                 <Modal title="【策略名称】上下架操作"
-                    visible={this.state.modal2visible}
-                    onOk={this.handleOk}
-                    okText="确认"
-                    confirmLoading={confirmLoading}
-                    onCancel={this.handleCancel}
-                    cancelText="取消"
-                >
-                    <p>确认上架/下架策略？</p>
+                        visible={this.state.modal2visible}
+                        onOk={this.handleshelves}
+                        okText="确认"
+                        confirmLoading={confirmLoading}
+                        onCancel={this.handleCancel}
+                        cancelText="取消"
+                    >
+                    <p>确认{status === "下架" ? "上架" : "下架"}策略？</p>
+                </Modal>
+                <Modal title="【策略名称】弃用操作"
+                        visible={this.state.modal3visible}
+                        onOk={this.disusehandle}
+                        okText="确认"
+                        confirmLoading={confirmLoading}
+                        onCancel={this.handleCancel}
+                        cancelText="取消"
+                    >
+                    <p>弃用后，不可再次恢复使用</p>
                 </Modal>
                 <Modal title="编辑策略【策略名称】"
-                    visible={this.state.modal4visible}
-                    onOk={this.handleOk}
-                    okText="保存"
-                    confirmLoading={confirmLoading}
-                    onCancel={this.handleCancel}
-                    cancelText="取消"
-                    destroyOnClose={true}
-                >
+                        visible={this.state.modal4visible}
+                        onOk={this.editHandle}
+                        okText="保存"
+                        confirmLoading={confirmLoading}
+                        onCancel={this.handleCancel}
+                        cancelText="取消"
+                        destroyOnClose={true}
+                    >
                     <Form
                         ref="form"
                         className="flex-column"
-                        onSubmit={this.handleOk}
                     >
                         <Form.Item
                             labelCol={{ span: 4 }}
                             wrapperCol={{ span: 20 }}
-                            label="免费体验"
+                            label="免费体验："
                         >
-                            <Row gutter={15}>
-                                <Col span={15}>
+                            <Row gutter={12}>
+                                <Col span={17}>
                                     {getFieldDecorator('experience', {
-                                        rules: [{ required: true, message: '请输入' }],
+                                        rules: [{
+                                            required: this.state.checked,
+                                            message: '请输入'
+                                        }],
                                     })(
-                                        <Input placeholder="请输入" disabled={this.state.checked?false:true} />
+                                        <Input type='number' placeholder="请输入" disabled={this.state.checked ? false : true} />
                                     )}
                                 </Col>
-                                <Col span={8}>
+                                <Col span={7}>
                                     <Checkbox ref="check" checked={this.state.checked} onChange={this.handleCheck}>参与体验</Checkbox>
                                 </Col>
                             </Row>
                         </Form.Item>
                         <Form.Item
                             {...formItemLayout}
-                            label="策略名称"
+                            label="策略名称："
                         >
-                            {getFieldDecorator('Policy name', {
+                            {getFieldDecorator('strategyName', {
                                 rules: [
                                     { required: true, message: '请输入' },
                                 ],
@@ -423,9 +732,9 @@ class StrategySelf extends Component {
                         </Form.Item>
                         <Form.Item
                             {...formItemLayout}
-                            label="策略作者"
+                            label="策略作者："
                         >
-                            {getFieldDecorator('Strategic author', {
+                            {getFieldDecorator('publisherName', {
                                 rules: [
                                     { required: true, message: '请输入' },
                                 ],
@@ -436,45 +745,45 @@ class StrategySelf extends Component {
                         <Form.Item
                             labelCol={{ span: 4 }}
                             wrapperCol={{ span: 20 }}
-                            label="分析价格"
+                            label="分析价格："
                         >
-                            <Row gutter={15}>
-                                <Col span={15}>
+                            <Row gutter={12}>
+                                <Col span={17}>
                                     {getFieldDecorator('price', {
                                         rules: [{ required: true, message: '请输入' }],
                                     })(
-                                        <Input placeholder="请输入" />
+                                        <Input type='number' placeholder="请输入" />
                                     )}
                                 </Col>
-                                <Col span={4}>
+                                <Col span={7}>
                                     <span>/月</span>
                                 </Col>
                             </Row>
                         </Form.Item>
                         <Form.Item
                             {...formItemLayout}
-                            label="资金容量"
+                            label="资金容量："
                         >
-                            {getFieldDecorator('Biaoti', {
+                            {getFieldDecorator('totalPrice', {
                                 rules: [
                                     { required: true, message: '请输入' },
                                 ],
                             })(
-                                <Input placeholder="请输入" />
+                                <Input type='number' placeholder="请输入" />
                             )}
                         </Form.Item>
                     </Form>
                 </Modal>
                 <Modal title="分享策略【策略名称】"
-                    visible={this.state.modal5visible}
-                    onOk={this.handleOk}
-                    okText="确认分享"
-                    confirmLoading={confirmLoading}
-                    onCancel={this.handleCancel}
-                    cancelText="取消"
-                    width={900}
-                    destroyOnClose={true}
-                >
+                        visible={this.state.modal5visible}
+                        onOk={this.shareHandle}
+                        okText="确认分享"
+                        confirmLoading={confirmLoading}
+                        onCancel={this.handleCancel}
+                        cancelText="取消"
+                        width={900}
+                        destroyOnClose={false}
+                    >
                     <Radio.Group onChange={this.radioChange} value={this.state.value}>
                         <Radio value={1}>所有用户</Radio>
                         <Radio value={2}>所有机构</Radio>
@@ -482,27 +791,38 @@ class StrategySelf extends Component {
                     </Radio.Group>
                     <Form
                         ref="form"
-                        className="modal-form form"
-                        onSubmit={this.handleSearch}
+                        className="modal-form form onlyready"
+                    // onSubmit={this.handleSearch}
                     >
                         <div className=" input al-center ">
                             <span className="text-right title-width">机构用户：</span>
                             <span className="input-width" >
-                                {getFieldDecorator(`field-${2}`, {})(
+                                {getFieldDecorator(`managerMsg`, {})(
                                     <Input placeholder="请输入" />
                                 )}
                             </span>
                         </div>
                         <div className="modal-btn">
-                            <Button type="primary" htmlType="submit">查询</Button>
+                            <Button type="primary" htmlType="submit" onClick={this.shareQuery}>查询</Button>
                             <Button style={{ marginLeft: 8 }} onClick={this.handleReset}>重置</Button>
                         </div>
                     </Form>
-                    <Table pagination={false} rowSelection={rowSelection} columns={columnsM} dataSource={dataM} />
+                    <Table rowKey="id" pagination={false} rowSelection={rowSelection} columns={columnsM} dataSource={managerList} className="checkedtable" />
                     <div className="Statistics">
-                        <span className="total">共 400 条记录 第 1 / 80 页</span>
+                        <span className="total">共{shareCount}条记录 第 {this.state.num} / {Math.ceil(shareCount / this.state.size)}页</span>
                         <span className="Pagination text-right">
-                            <Pagination total={50} showSizeChanger showQuickJumper hideOnSinglePage />
+                            <LocaleProvider locale={zhCN}>
+                                <Pagination
+                                    total={shareCount}
+                                    showSizeChanger={true}
+                                    showQuickJumper={true}
+                                    hideOnSinglePage={false}
+                                    current={this.state.num}
+                                    pageSize={this.state.size}
+                                    onChange={this.shareNumChange}
+                                    onShowSizeChange={this.shareSizeChange}
+                                />
+                            </LocaleProvider>
                         </span>
                     </div>
                 </Modal>

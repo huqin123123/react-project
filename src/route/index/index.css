@@ -1,0 +1,15 @@
+.welcome{
+   position: absolute;
+   top: 50%;
+   left: 30%;
+}
+.welcome-text{
+    position: relative;
+    width: 900px;
+    margin: auto;
+    text-align: center;
+    font-weight: 400;
+    font-style: normal;
+    font-size: 64px;
+    color: #000;
+}

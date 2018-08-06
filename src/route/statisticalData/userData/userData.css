@@ -1,0 +1,13 @@
+.userData-detail{
+    width: 100%;
+}
+.userData-detail .userData-table{
+    width: 80%;
+    margin-left: 70px;
+}
+.userData-detail .number td{
+    color: #B51D1A;
+}
+.userData-detail .title td{
+    color: #AEAEAE;
+}

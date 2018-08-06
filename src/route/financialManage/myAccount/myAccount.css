@@ -1,0 +1,17 @@
+.myAccount i{
+    font-style: normal;
+    color: #000;
+    padding-left: 20px;
+}
+.myAccount-table{
+    margin-left: 20px;
+}
+.myAccount-table td{
+    padding-right: 90px;
+}
+.myAccount .myAccount-table-data{
+    color: #B51D1A;
+}
+.myAccount .myAccount-table-text{
+    color: #AEAEAE;
+}

@@ -1,3 +1,4 @@
+
 body {
     margin: 0;
     padding: 0;
@@ -8,12 +9,17 @@ html, body, #root{
     height: 100%;
     min-width: 1200px;
 }
+
 .flex-row {
     display: flex;
     flex-direction: row
 }
 .flex{
     flex: 1;
+}
+/*占2份*/
+.flex2{
+    flex:2;
 }
 .main{
     height: 100%;
@@ -25,7 +31,9 @@ html, body, #root{
 .ju-right {
     justify-content: flex-end
 }
-
+.ju-left{
+    justify-content: flex-start;
+}
 .al-center {
     align-items: center
 }
@@ -33,15 +41,11 @@ html, body, #root{
 .hands {
     cursor: pointer;
 }
-
 /* 宽高 */
-
 .fill-flex {
     flex: 1
 }
-
 /* 对齐方式 */
-
 .text-right {
     text-align: right
 }
@@ -50,13 +54,6 @@ html, body, #root{
 }
 .hide {
     display: none
-}
-/*form表单*/
-.query{
-   padding: 10px 0 20px 24px;
-}
-.query>div {
-    padding: 0px 5px
 }
 .form{
     display: flex;
@@ -71,46 +68,76 @@ html, body, #root{
     display: flex;
     flex-direction: row;
 }
+/*单个form输入框宽度*/
 .list-width{
-    width: 400px;
-    display: flex;
+    width:420px;
+    margin-right: 25px;
 }
 .flex-column{
     display: flex;
     flex-direction: column;
-}
-.title-width{
-    width: 70px;
-}
-.input-width{
-    width: 230px;
 }
 .form-row{
     padding-top: 20px;
 }
 /*表格*/
 .tableList{
-    padding: 20px 0;
+    padding: 0 10px;
 }
 /*分页*/
 .Statistics{
     display: flex;
     flex-direction: row;
+    padding: 0 10px 30px;
 }
 .total{
-    width: 300px;
+    width: 170px;
 }
 .Pagination{
     flex: 1;
 }
 .tableList .ant-table-thead th{
-    font-size: 12px;
+    font-size: 14px;
     font-weight: bold;
     color: #000;
     text-align: center;
 } 
 .tableList .ant-table-tbody .ant-table-row td{
-    font-size: 10px;
+    font-size: 12px;
     color: #000;
     text-align: center;
 }
+/*图标*/
+.logo-img{
+    width: 50px;
+    height: 40px;
+    padding-right:10px;
+}
+/*添加图标*/
+.primary-btn{
+    margin-left: 15px;
+    background-color: #fff !important;
+    border-color: #E9E9E9 !important;
+    color: rgba(0, 0, 0, 0.65) !important;
+}
+/*form输入框标题文字*/
+.title-width{
+    width: 70px;
+}
+/*输入框宽度*/
+.input-width{
+    width: 60%;
+}
+.title-width4{
+    width: 100px;
+}
+/*form两行显示间距 查询按钮间距*/
+.formspace{
+    padding-bottom: 20px;
+}
+/*时间选择器*/
+.picker-width{
+    width: 100%;
+}
+
+

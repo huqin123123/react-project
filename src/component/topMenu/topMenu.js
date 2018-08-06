@@ -1,30 +1,64 @@
 import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 import ReactDOM from 'react-dom';
 import './topMenu.css';
-import { Icon, } from 'antd';
+import { Icon,message,Modal } from 'antd';
 import $ from 'jquery';
 import { RouteEnum } from '../../enum/routeEnum';
-import { Link } from 'react-router-dom';
-
+import ServerHandle from '../../utils/ApiHandle';
 
 //顶部菜单
 export default class TopMenu extends Component {
-    handClick=()=>{
-      
-
+    
+    static propTypes = {
+        toggleCollapsed: PropTypes.any,
+        collasped: PropTypes.bool
+    }
+    constructor(props) {
+        super(props);
+        this.handClick=this.handClick.bind(this);
+    }
+    handClick(){
+        const _this=this;
+        Modal.confirm({
+            title: '确定退出登录?',
+            okText:'确认',
+            cancelText:'取消',
+            onOk() {
+                ServerHandle.GET(
+                    {
+                        url: `/web/logout`,
+                        data: {},
+                    }
+                ).then(result => {
+                    if (result.success) {
+                        message.success('退出成功');
+                        _this.props.target("/");
+                    }
+                    else {
+                        message.error(result.message);
+                    }
+                })  
+              },
+              onCancel() {},
+          });
     }
     render() {
+        const { collapsed, toggleCollapsed } = this.props;
+        // console.log(this);
         return (
             <div className="top-menu" >
                 <div className="top-menu-sub flex-row al-center" >
                     <div className="hands">
-                        <Icon  
-                        type={this.props.collasped? 'menu-unfold' : 'menu-fold'}
-                        // onClick={}
-                        style={{ fontSize: 18 }}/>
+                        <Icon
+                            type={collapsed ? 'menu-unfold' : 'menu-fold'}
+                            onClick={toggleCollapsed}
+                            style={{ fontSize: 18 }} />
                     </div>
                     <div className="fill-flex flex-row ju-right" >
-                        <div className="top-menu-user" >当前用户：<a>管理员</a> <Link to="/login">退出</Link> </div>
+                        <div className="top-menu-user" >当前用户：<span style={{paddingRight:15}}>管理员</span>
+                            <a onClick={this.handClick}>退出</a>
+                        </div>
                         <div>用户角色：超级管理员</div>
                     </div>
                 </div>
@@ -67,7 +101,7 @@ class SubMenu extends Component {
             }
         }
         e.stopPropagation();
-        targetUrl && this.target(targetUrl); 
+        targetUrl && this.target(targetUrl);
     }
     componentDidUpdate = () => {
         const dom = this.refs.submenu;
@@ -90,10 +124,11 @@ class SubMenu extends Component {
                 $(box)
                     .addClass('sub-menu-item flex-row al-center active hands route-item')
                     .attr('data-key', path)
-                const com = <div onClick={this.target.bind(this, findRoute.route)} >
+                    .click(this.target.bind(this, findRoute.route))
+                const com = <div style={{ margin: '0 auto' }} >
                     {findRoute.title}
                     <span className="sub-menu-close-btn">
-                        <Icon type="close"  onClick={this.handClick.bind(this, findRoute.route)} />
+                        <Icon type="close" onClick={this.handClick.bind(this, findRoute.route)} />
                     </span>
                 </div>
                 dom.append(box);
@@ -101,15 +136,15 @@ class SubMenu extends Component {
             }
         }
     }
+    componentDidMount = () => {
+        $(".index").trigger("click");
+    }
     render() {
         return (
             <div className="sub-menu flex-row" ref="submenu" >
-                <div data-key="/" className="route-item sub-menu-item flex-row al-center active hands" >
-                    <div onClick={this.target.bind(this, '/')} >
-                        管理页面
-                        <span className="sub-menu-close-btn"   >
-                            <Icon type="close" onClick={this.closeClick} />
-                        </span>
+                <div data-key="/index" className="route-item sub-menu-item flex-row al-center active hands index" onClick={this.target.bind(this, '/index')}>
+                    <div style={{ margin: '0 auto' }}  >
+                       首页
                     </div>
                 </div>
             </div>

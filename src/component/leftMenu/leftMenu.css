@@ -5,6 +5,19 @@
     height: 100%;
     width: 220px;
     background-color: #001529;
-    overflow-y: scroll;
     z-index: 101;
+}
+.left-menu-logo{
+    font-size: 18px;
+    font-family: "Microsoft YaHei UI Bold", "Microsoft YaHei UI";
+    color: #fff;
+    font-weight: 700;
+    height: 55px;
+    text-align: center;
+    background-color: #00284D;
+    line-height: 55px;
+}
+.ant-munu-item.active{
+    background-color: #fff;
+    color: #1890FF;
 }

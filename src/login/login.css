@@ -1,0 +1,70 @@
+.app{
+  position: fixed;
+  left: 0;
+  top: 0;
+    text-align: center;
+    width: 100%;
+    height: 100%;
+    border: 1px solid #000;
+    padding-top:120px;
+}
+.login{
+    display: flex;
+   flex-direction: column;
+   align-content: center;
+    width: 317px;
+    background: transparent;
+    margin:0 auto;
+   
+  }
+  .login Input{
+      margin-top: 20px;
+  }
+  .Code{
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+}
+.input3{
+    width: 240px;
+}
+
+  .btn{
+    margin-top:20px;
+    margin-left:10px; 
+    flex: 1;
+    padding: 0;
+  }
+  .verify_codeid{
+      width: 67px;
+      height: 32px;
+  }
+  .app .ant-form-item{
+    margin-bottom: 0;
+  }
+ .app .ant-btn-primary{
+     width: 317px;
+     margin-top: 40px;
+ }
+ .login-logo {
+     font-size: 25px;
+     color: #000;
+     font-weight: bold;
+ }
+ .login-text{
+    font-family: "Microsoft Tai Le Normal", "Microsoft Tai Le";
+    color: rgb(138, 139, 141);
+    letter-spacing: 2px;
+    padding: 15px 0;
+    font-style: normal;
+    font-size: 14px;
+    line-height: 22px;
+    visibility: visible;
+    word-wrap: break-word;
+ }
+ .copy{
+    padding-top: 260px;
+ }
+ .app .ant-form-explain{
+     text-align: left;
+ }

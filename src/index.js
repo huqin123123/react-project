@@ -3,13 +3,15 @@ import ReactDOM from 'react-dom';
 import './index.css';
 import registerServiceWorker from './registerServiceWorker';
 import Main from './main/main';
-// import App from './login/login'; 
-import { BrowserRouter as Router, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
+import Login from './login/login';
 
 
-ReactDOM.render(<Router>
-    <div>
-        <Route path="/" component={Main} />
-    </div>
-</Router>, document.getElementById('root'));
+ReactDOM.render(
+    <Router>
+        <Switch>
+            <Route path="/" component={Login} exact={true} />
+            <Route path="/index" component={Main} />
+        </Switch>
+    </Router>, document.getElementById('root'));
 registerServiceWorker();

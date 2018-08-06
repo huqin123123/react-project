@@ -1,6 +1,8 @@
 import React, { Component } from 'react';
-import { Dropdown, Menu, Icon, Table, Form, Pagination, Modal, Input } from 'antd';
+import { LocaleProvider, Dropdown, Menu, Icon, Table, Form, Pagination, Modal, Input, Button } from 'antd';
+import zhCN from 'antd/lib/locale-provider/zh_CN';
 import './parameterSetting.css';
+//参数设置
 const { TextArea } = Input;
 const data = [{
     key: '1',
@@ -33,7 +35,6 @@ class ParameterSetting extends Component {
     }
     showModal = () => {//编辑参数
         this.setState({ visible: true });
-        this.props.form.resetFields();
     }
     handleOk = (e) => {
         this.setState({
@@ -82,7 +83,9 @@ class ParameterSetting extends Component {
             key: 'operation',
             render: text => (
                 <Dropdown overlay={menu}>
-                    <a> <Icon type="menu-fold" style={{ fontSize: 15 }} /></a>
+                    <Button style={{ marginLeft: 8 }}>
+                        操作 <Icon type="down" />
+                    </Button>
                 </Dropdown>
             )
         }];
@@ -94,7 +97,9 @@ class ParameterSetting extends Component {
                 <div className="Statistics">
                     <span className="total">共 400 条记录 第 1 / 80 页</span>
                     <span className="Pagination text-right">
-                        <Pagination total={50} showSizeChanger showQuickJumper hideOnSinglePage />
+                        <LocaleProvider locale={zhCN}>
+                            <Pagination total={50} showSizeChanger showQuickJumper hideOnSinglePage defaultCurrent={1} />
+                        </LocaleProvider>
                     </span>
                 </div>
                 <Modal title="【参数名称】编辑参数"
@@ -104,13 +109,13 @@ class ParameterSetting extends Component {
                     confirmLoading={confirmLoading}
                     onCancel={this.handleCancel}
                     cancelText="取消"
+                    destroyOnClose={true}
                 >
                     <Form onSubmit={this.handleSubmit}>
                         <Form.Item
                             labelCol={{ span: 4 }}
-                            wrapperCol={{ span: 12 }}
+                            wrapperCol={{ span: 16 }}
                             label="参数："
-                            hasFeedback
                         >
                             {getFieldDecorator('content', {
                                 rules: [
@@ -125,10 +130,7 @@ class ParameterSetting extends Component {
                             wrapperCol={{ span: 16 }}
                             label="备注："
                         >
-                            {getFieldDecorator('details', {
-                            })(
-                                <TextArea rows={4} placeholder="支持富文本" />
-                            )}
+                            <TextArea rows={4} placeholder="多行文本" />
                         </Form.Item>
                     </Form>
                 </Modal>
