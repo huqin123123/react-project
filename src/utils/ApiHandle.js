@@ -17,6 +17,7 @@ export default class ServerHandle {
     }
 
     static Api(params) {
+        console.log(params)
         if (process.env.NODE_ENV !== "development") {
             if (!params.baseURL) {
                 params.baseURL = "/apis";

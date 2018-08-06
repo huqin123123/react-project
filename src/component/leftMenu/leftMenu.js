@@ -3,8 +3,6 @@ import PropTypes from 'prop-types';
 import './leftMenu.css';
 import { Menu, Icon } from 'antd';
 import { Link } from 'react-router-dom';
-import $ from 'jquery';
-import { RouteEnum } from '../../enum/routeEnum';
 
 
 const route_map = new Map([
@@ -83,8 +81,6 @@ export default class LeftMenu extends Component {
         const secondMenu = tab_map.set(firstMenu, selectedKeys.selectedKeys[0]);
     }
     handleClick = (e) => {
-        // console.log('click ', e);
-        // console.log(e.key)
         e.key && this.target(e.key);
     }
     render() {

@@ -1,83 +1,76 @@
 import React, { Component } from 'react';
-import './talentViewpoint.css';
-import {LocaleProvider, Icon, Button, Table, Pagination, Form, Input, Cascader, DatePicker, Menu, Dropdown, Modal,Divider } from 'antd';
+import {LocaleProvider, Icon, Button, Table, Pagination, Form, Input, Cascader, DatePicker, Menu, Dropdown, Modal,Divider,message } from 'antd';
 import zhCN from 'antd/lib/locale-provider/zh_CN';
+import './talentViewpoint.css'
+import ServerHandle from '../../../utils/ApiHandle';
+import $ from 'jquery';
 const option = [{
-    value: '已冻结',
-    label: '已冻结'
-}, {
-    value: '正常',
-    label: '正常'
-}];
-const data = [{
-    key: '1',
-    id: '1',
-    time: '2018-04-05 10:15:25',
-    publisher: '王**(189**1635)',
-    title: '4月19日热点前瞻',
-    state: '已冻结',
-}, {
-    key: '2',
-    id: '2',
-    time: '2018-04-05 10:15:25',
-    publisher: '王**(189**1635)',
-    title: '4月18日热点前瞻',
-    state: '正常',
-}, {
-    key: '3',
-    id: '3',
-    time: '2018-02-05 10:15:25',
-    publisher: '王**(189**1635)',
-    title: '4月17日前瞻',
-    state: '正常',
-}];
+        value: '已冻结',
+        label: '已冻结'
+    }, {
+        value: '正常',
+        label: '正常'
+    }];
+  
 class TalentViewpoint extends Component {
-    state = {
-        startValue: null,
-        endValue: null,
-        endOpen: false,
-        visible: false
-    };
-    disabledStartDate = (startValue) => {
-        const endValue = this.state.endValue;
-        if (!startValue || !endValue) {
-            return false;
+    constructor(props){
+        super(props);
+        this.frozen=this.frozen.bind(this);
+        this.dataList=this.dataList.bind(this);
+        this.handleQuery=this.handleQuery.bind(this);
+        this.sizeChange=this.sizeChange.bind(this);
+        this.numChange=this.numChange.bind(this);
+        this.handleFrozen=this.handleFrozen.bind(this);
+        this.state={
+            visible: false,
+            num:1,
+            size:20,
+            count:0,
+            dataList:[],
+            adviserId:'',//达人观点id
+            status:'',//冻结状态
+            title:'',//观点标题
         }
-        return startValue.valueOf() > endValue.valueOf();
     }
-    disabledEndDate = (endValue) => {
-        const startValue = this.state.startValue;
-        if (!endValue || !startValue) {
-            return false;
-        }
-        return endValue.valueOf() <= startValue.valueOf();
+    componentDidMount(){
+        this.dataList();
     }
-    onChange = (field, value) => {
+    dataList(){
+        let managerName=$("#managerName").val();
+        let createTimeStart=$('#createTimeStart  input').val();
+        let createTimeEnd= $('#createTimeEnd  input').val();
+        let status =$(".talentViewpointStatus .ant-cascader-picker-label").text()
+        ServerHandle.GET({
+            url:'/web/consult/list',
+            data:{
+                pageNum:this.state.num,
+                pageSize:this.state.size,
+                isVisible:status==="正常"?1:(status==="已冻结"?2:''),//1正常2冻结
+                createTimeStart:createTimeStart,
+                createTimeEnd:createTimeEnd,
+                queryName:managerName,//发布人
+            }
+        }).then(result=>{
+            if(result.success){
+               this.setState({dataList:result.data,count:result.count})
+            }
+        })
+    }
+    //分页
+    numChange(page, pageSize) {
         this.setState({
-            [field]: value,
-        });
+            num: page,
+            size: pageSize,
+        }, () => { this.dataList()})
     }
-    onStartChange = (value) => {
-        this.onChange('startValue', value);
+    sizeChange(current, size) {
+        this.setState({
+            num: current,
+            size: size,
+        }, () => {this.dataList()})
     }
-
-    onEndChange = (value) => {
-        this.onChange('endValue', value);
-    }
-
-    handleStartOpenChange = (open) => {
-        if (!open) {
-            this.setState({ endOpen: true });
-        }
-    }
-    handleEndOpenChange = (open) => {
-        this.setState({ endOpen: open });
-    }
-    handleSearch = (e) => {
-        e.preventDefault();
-        this.props.form.validateFields((err, values) => {
-            console.log('Received values of form: ', values);
-        });
+    handleQuery(){
+        this.dataList();
     }
     handleReset = () => {
         this.props.form.resetFields();
@@ -86,21 +79,32 @@ class TalentViewpoint extends Component {
             endValue: null,
         });
     }
-    showModal = () => {//冻结/解冻
-        this.setState({ visible: true });
+    frozen(adviserId,isVisible,title){//冻结/解冻
+        this.setState({ visible: true,adviserId:adviserId,status:isVisible,title:title });
     }
-    handleOk = (e) => {
-        this.setState({
-            confirmLoading: true,
-        });
-        setTimeout(() => {
-            this.setState({
-                visible: false,
-                confirmLoading: false,
-            });
-        }, 2000);
-        e.preventDefault();
-        this.props.form.validateFields((err, values) => {
+    handleFrozen() {
+        ServerHandle.POST({
+            url:'/web/consult/isVisible',
+            data:{
+                id:this.state.adviserId,
+                isVisible:this.state.status===1?2:(this.state.status===2?1:'')
+            }
+        }).then(result=>{
+            if(result.success){
+                this.setState({
+                    confirmLoading: true,
+                },()=>{
+                    setTimeout(() => {
+                        this.setState({
+                            visible: false,
+                            confirmLoading: false,
+                        },()=>{
+                            message.success(this.state.status===1?'冻结成功':(this.state.status===2?'解冻成功':''))
+                            this.dataList();
+                        });
+                    }, 2000);
+                });
+            }else{message.error(this.state.status===1?'冻结失败':(this.state.status===2?'解冻失败':''))}
         });
     }
     handleCancel = () => {
@@ -110,115 +114,132 @@ class TalentViewpoint extends Component {
     }
     render() {
         const { getFieldDecorator } = this.props.form;
-        const { startValue, endValue, endOpen, confirmLoading, visible } = this.state;
-        const menu = (
-            <Menu>
-                <Menu.Item>
-                    <a onClick={this.showModal}>冻结/解冻</a>
-                </Menu.Item>
-            </Menu>
-        );
+        const {confirmLoading, visible,num,size,count,dataList,title,status } = this.state;
         const columns = [{
-            title: '序号',
-            dataIndex: 'id'
-        }, {
-            title: '发布时间',
-            dataIndex: 'time',
-        }, {
-            title: '发布人',
-            dataIndex: 'publisher',
-        }, {
-            title: '观点标题',
-            dataIndex: 'title',
-        }, {
-            title: '冻结状态',
-            dataIndex: 'state',
-        }, {
-            title: '操作',
-            dataIndex: 'operation',
-            render: text => (
-                <Dropdown overlay={menu}>
-                    <Button style={{ marginLeft: 8 }}>
-                        操作 <Icon type="down" />
-                    </Button>
-                </Dropdown>
-            )
+                title: '序号',
+                key: 'number',
+                render:(text,item,key)=>{
+                    return key+1
+                }
+            }, {
+                title: '发布时间',
+                key: 'createTime',
+                render:text=>{
+                    return text.createTime
+                }
+            }, {
+                title: '发布人',
+                key: 'managerName',
+                render:text=>{
+                    return text.managerName
+                }
+            }, {
+                title: '观点标题',
+                key: 'title',
+                render:text=>{
+                    return text.title 
+                }
+            }, {
+                title: '冻结状态',
+                key: 'state',
+                render:text=>{
+                    return text.isVisible===1?'正常':(text.isVisible===2?'已冻结':'-') 
+                }
+            }, {
+                title: '操作',
+                key: 'operation',
+                render: text => (
+                    <Dropdown overlay={
+                        <Menu>
+                        <Menu.Item onClick={()=>{this.frozen(text.id,text.isVisible,text.title)}}>
+                        {text.isVisible===1?'冻结':(text.isVisible===2?'解冻':'')}
+                        </Menu.Item>
+                    </Menu>
+                    }>
+                        <Button style={{ marginLeft: 8 }}>
+                            操作 <Icon type="down" />
+                        </Button>
+                    </Dropdown>
+                )
         }];
         return (
-            <div className="customerViewpoint">
+            <div className="telentViewpoint">
                 <Form
                     ref="form"
                     className="flex-column"
-                    onSubmit={this.handleSearch}
-                >
+                    >
                     <div className="formdiv formspace">
                         <div className="al-center flex flex-row">
                             <span className="text-right title-width4">发布人：</span>
                             <span className="input-width">
-                                {getFieldDecorator(`field-${1}`, {})(
+                                {getFieldDecorator(`managerName`, {})(
                                     <Input placeholder="请输入手机号或姓名" />
                                 )}
                             </span>
                         </div>
                         <div className="al-center flex2 flex-row ">
                             <span className="text-left title-width">发布日期：</span>
-                            <span>
-                                <DatePicker
-                                    disabledDate={this.disabledStartDate}
-                                    format="YYYY-MM-DD"
-                                    value={startValue}
-                                    placeholder="请输入"
-                                    onChange={this.onStartChange}
-                                    onOpenChange={this.handleStartOpenChange}
-                                />-
-                                <DatePicker
-                                    disabledDate={this.disabledEndDate}
-                                    format="YYYY-MM-DD "
-                                    value={endValue}
-                                    placeholder="请输入"
-                                    onChange={this.onEndChange}
-                                    open={endOpen}
-                                    onOpenChange={this.handleEndOpenChange}
-                                />
-                            </span>
+                                <span className="flex picker-widthTwo">
+                                    <span>
+                                        <LocaleProvider locale={zhCN} >
+                                            {getFieldDecorator('createTimeStart', {})(
+                                                <DatePicker />
+                                            )}
+                                        </LocaleProvider >-
+                                        <LocaleProvider locale={zhCN} >
+                                            {getFieldDecorator('createTimeEnd', {})(
+                                                <DatePicker />
+                                            )}
+                                        </LocaleProvider >
+                                    </span>
+                                </span>
                         </div>
                     </div>
                     <div className="formdiv">
-                        <div className="al-center flex flex-row">
+                    <div className="al-center flex flex-row ">
                             <span className="text-right title-width4">状态：</span>
-                            <span className="input-width">
-                                {getFieldDecorator(`field-${2}`, {})(
+                            <span className="input-width talentViewpointStatus">
+                                {getFieldDecorator(`isVisible`, {})(
                                     <Cascader options={option} placeholder="请选择" />
                                 )}
                             </span>
                         </div>
                         <div className=" flex2 text-left">
-                            <Button type="primary" htmlType="submit">查询</Button>
+                            <Button type="primary" htmlType="submit" onClick={this.handleQuery}>查询</Button>
                             <Button style={{ marginLeft: 8 }} onClick={this.handleReset}>重置</Button>
                         </div>
                     </div>
                 </Form>
                 <Divider style={{ marginTop: 15, marginBottom: 15 }} />
                 <div className="tableList">
-                    <Table pagination={false} columns={columns} dataSource={data} bordered />
+                    <Table rowKey="id" pagination={false} columns={columns} dataSource={dataList} bordered />
                 </div>
                 <div className="Statistics">
-                    <span className="total">共 400 条记录 第 1 / 80 页</span>
+                    <span className="total">共 {count}条记录 第 {num} / {Math.ceil(count/size)}页</span>
                     <span className="Pagination text-right">
-                        <LocaleProvider locale={zhCN}>
-                            <Pagination total={50} showSizeChanger showQuickJumper hideOnSinglePage defaultCurrent={1} />
-                        </LocaleProvider>
+                    <LocaleProvider locale={zhCN}>
+                        <Pagination 
+                            total={count} 
+                            showSizeChanger={true}
+                            showQuickJumper={true}
+                            hideOnSinglePage={false}
+                            current={num}
+                            pageSize={size}
+                            onChange={this.numChange}
+                            onShowSizeChange={this.sizeChange}
+                           />
+                    </LocaleProvider>
                     </span>
                 </div>
-                <Modal title="【观点标题】冻结解冻操作"
+                <Modal title={'['+title+']'+(status===1?'冻结':(status===2?'解冻':''))+'操作'}
                     visible={visible}
-                    onOk={this.handleOk}
+                    onOk={this.handleFrozen}
                     okText="确认"
                     confirmLoading={confirmLoading}
                     onCancel={this.handleCancel}
                     cancelText="取消"
                 >
-                    <p>确认冻结/解冻达人观点？</p>
+                    <p>确认{status===1?'冻结':(status===2?'解冻':'')}达人观点？</p>
                 </Modal>
             </div>
         );

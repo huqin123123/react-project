@@ -4,7 +4,7 @@ import './roleManage.css';
 import zhCN from 'antd/lib/locale-provider/zh_CN';
 import $ from 'jquery';
 import ServerHandle from '../../../utils/ApiHandle';
-import Emit from '../../../utils/Emit';
+// import Emit from '../../../utils/Emit';
 const { TextArea } = Input;
 class RoleManage extends Component {
     constructor(props){
@@ -22,10 +22,6 @@ class RoleManage extends Component {
             visible2: false,
             visible3: false,
             confirmLoading: false,
-            // 自动展开父节点
-            autoExpandParent: true,
-            //（受控）设置选中的树节点
-            selectedKeys: [],
             //分页页码，条数
             num:1,
             size:20,
@@ -34,6 +30,12 @@ class RoleManage extends Component {
             roleId:0,
             //权限列表
             jurisdictionList:[],
+            //选中权限
+            checkedMsg:[],
+              // 自动展开父节点
+              autoExpandParent: true,
+              expandedKeys: ['0-1', '0-1-4'],
+              checkedKeys: ['0-1-4'],
         }
     }
     componentDidMount(){
@@ -78,34 +80,37 @@ class RoleManage extends Component {
         });
     }
     //编辑角色
-    showModal2(id,name,description) {
+    showModal2(text) {
+        console.log(text)
         this.setState({
             visible2: true,
-            roleId:id,
-            roleName:name,
-            description:description,
+            roleId:text.id,
+            roleName:text.roleName,
+            description:text.description,
         },()=>{
-            $('#roleName').val(name);
-            $('#describe').val(description);
+            this.props.form.setFieldsValue({
+                roleName:text.roleName,
+                describe:text.description
+            })
         });
     }
     //分配权限
-    showModal3(id) {
+    showModal3(text) {
         this.setState({
             visible3: true,
-            roleId:id,
+            roleId:text.id,
+            roleName:text.roleName,
         },()=>{
             ServerHandle.GET({
                 url:'/web/permission/role/getRoleMenu',
-                data:{roleId:id}
+                data:{roleId:text.id}
             }).then(result=>{
                 if(result.success){
-                    this.setState({jurisdictionList:result.data},
-                        ()=>{ console.log(this.state.jurisdictionList)})
+                    console.log(result)
+                    this.setState({jurisdictionList:result.data})
                 }
             })
         });
-       
     }
     handleAdd () {
         let name=$('#rolename').val();
@@ -182,16 +187,19 @@ class RoleManage extends Component {
         ServerHandle.POST({
             url:'/web/permission/role/updateRoleMenu',
             data:{
-                "menuTreeVOS":[{
-                    'btnId':0,
-                    'checked':false,
-                    'id':0,
-                    'name':'string',
-                    'open':'true',
-                    'parentId':0
-                }],
-                "roleId":this.state.roleId,
-            }
+                "menuTreeVOS": 
+                [
+                  {
+                    btnId: 0,
+                    checked: false,
+                    id: 0,
+                    name: "string",
+                    open: true,
+                    parentId: 0
+                  }
+                ],
+                roleId: this.state.roleId,
+              }
         })
     }
     handleReset = () => {
@@ -205,51 +213,33 @@ class RoleManage extends Component {
         });
     }
     //树形控件
-    onCheck = (checkedKeys) => {
-        // console.log('onCheck', checkedKeys);
-        this.setState({ checkedKeys });
+    onCheck = (checkedKeys,info,item) => {
+        console.log(checkedKeys,info)
+        this.setState({ checkedKeys:checkedKeys,checked:info},()=>{
+        });
     }
-    onSelect = (selectedKeys, info) => {
-        // console.log('onSelect', info);
-        this.setState({ selectedKeys });
+    //	展开/收起节点时触发
+    onExpand = (expandedKeys,info) => {
+    console.log( expandedKeys,info);
+    this.setState({
+        expandedKeys,
+        autoExpandParent: false,
+    })
     }
-
     renderTreeNodes = (data) => {
-        var map = {},
-        dest = [];
-        for(var i = 0; i < data.length; i++){
-            var ai = data[i];
-            if(!map[ai.parentId]){
-                dest.push({
-                    parentId: ai.parentId,
-                    children: [ai]
-                });
-                map[ai.parentId] = ai;
-            }else{
-                for(var j = 0; j < dest.length; j++){
-                    var dj = dest[j];
-                    if(dj.parentId === ai.parentId){
-                        dj.children.push(ai);
-                        break;
-                    }
-                }
-            }
-        }
-       
-        return dest.map((item) => {
-           console.log(item.children)
-            if (item.children) {
+        return data.map((item) => {
+            if (item.child) {
                 return (
-                    <Tree.TreeNode title={item.children[0].name} key={item.children.id} dataRef={item.children}>
-                        {/* {this.renderTreeNodes(item.children)} */}
+                    <Tree.TreeNode title={item.menuName} key={item.key} dataRef={item}>
+                        {this.renderTreeNodes(item.child)}
                     </Tree.TreeNode>
                 );
             }
-            return <Tree.TreeNode {...item} />;
+                return <Tree.TreeNode title={item.menuName} key={item.key} dataRef={item}/>;        
         });
     }
     render() {
-        const { confirmLoading,roleList,count,num,size } = this.state;
+        const { confirmLoading,roleList,count,num,size,roleName } = this.state;
         const { getFieldDecorator } = this.props.form;
         const formItemLayout = {
             labelCol: { span: 4 },
@@ -279,11 +269,9 @@ class RoleManage extends Component {
                 render: text => (
                     <Dropdown overlay={
                         <Menu>
-                            <Menu.Item>
-                                <a onClick={()=>{this.showModal2(text.id,text.roleName,text.description)}}>编辑</a>
+                            <Menu.Item onClick={()=>{this.showModal2(text)}}>编辑
                             </Menu.Item>
-                            <Menu.Item>
-                                <a onClick={()=>{this.showModal3(text.id)}}>分配权限</a>
+                            <Menu.Item onClick={()=>{this.showModal3(text)}}>分配权限
                             </Menu.Item>
                         </Menu>
                     }>
@@ -350,7 +338,6 @@ class RoleManage extends Component {
                     <Form
                         ref="form"
                         className="flex-column"
-                        // onSubmit={this.handleOk}
                     >
                         <Form.Item
                             {...formItemLayout}
@@ -372,7 +359,7 @@ class RoleManage extends Component {
                         </Form.Item>
                     </Form>
                 </Modal>
-                <Modal title="编辑【角色名称】"
+                <Modal title={'编辑【'+roleName+'】'}
                     visible={this.state.visible2}
                     onOk={this.handleEdit}
                     okText="保存"
@@ -383,7 +370,6 @@ class RoleManage extends Component {
                     <Form
                         ref="form"
                         className="flex-column"
-                        // onSubmit={this.handleOk}
                     >
                         <Form.Item
                             {...formItemLayout}
@@ -401,12 +387,13 @@ class RoleManage extends Component {
                             {...formItemLayout}
                             label="角色描述："
                         >
-                            <TextArea rows={4}  id="describe"/>
+                        {getFieldDecorator('describe', {})(
+                                <TextArea rows={4}  />
+                            )}
                         </Form.Item>
-
                     </Form>
                 </Modal>
-                <Modal title="对【角色名称】分配权限"
+                <Modal title={'对【'+roleName+'】分配权限'}
                     visible={this.state.visible3}
                     onOk={this.handleOk}
                     okText="保存"
@@ -416,14 +403,12 @@ class RoleManage extends Component {
                     >
                     <Tree
                         checkable
-                        // onExpand={this.onExpand}
-                        // expandedKeys={this.state.expandedKeys}
+                        onExpand={this.onExpand}
+                        expandedKeys={this.state.expandedKeys}
                         autoExpandParent={this.state.autoExpandParent}
                         onCheck={this.onCheck}
-                        // checkedKeys={this.state.checkedKeys}
-                        onSelect={this.onSelect}
-                        selectedKeys={this.state.selectedKeys}
                         className="customModal"
+                        checkedKeys={this.state.checkedKeys}
                     >
                         {this.renderTreeNodes(this.state.jurisdictionList)}
                     </Tree>

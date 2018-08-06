@@ -2,111 +2,159 @@ import React, { Component } from 'react';
 import './userData.css';
 import {LocaleProvider, Button, Table, Pagination, Form, Input, Divider } from 'antd';
 import zhCN from 'antd/lib/locale-provider/zh_CN';
-const data = [{
-    key: '1',
-    id: '1',
-    realname: '王小明01',
-    tel: '18213516200',
-    manager: '100',
-    total: '1000',
-    customer: '500',
-    customertotal: '5000',
-    todayVIP: '100',
-    VIPtotal: '1000',
-    wxtotal: '5000',
-    follow: '100',
-    cancel: '50',
-    canceltotal: '600'
-}, {
-    key: '2',
-    id: '2',
-    realname: '王小明02',
-    tel: '18213516201',
-    manager: '100',
-    total: '1000',
-    customer: '500',
-    customertotal: '5000',
-    todayVIP: '100',
-    VIPtotal: '1000',
-    wxtotal: '5000',
-    follow: '100',
-    cancel: '50',
-    canceltotal: '600'
-}, {
-    key: '3',
-    id: '3',
-    realname: '王小明03',
-    tel: '18213516202',
-    manager: '100',
-    total: '1000',
-    customer: '500',
-    customertotal: '5000',
-    todayVIP: '100',
-    VIPtotal: '1000',
-    wxtotal: '5000',
-    follow: '100',
-    cancel: '50',
-    canceltotal: '600'
-}];
-const columns = [{
-    title: '序号',
-    dataIndex: 'id'
-}, {
-    title: '真实姓名',
-    dataIndex: 'realname',
-}, {
-    title: '手机号',
-    dataIndex: 'tel',
-}, {
-    title: '今日客户经理',
-    dataIndex: 'manager',
-}, {
-    title: '客户经理总量',
-    dataIndex: 'total',
-}, {
-    title: '今日客户',
-    dataIndex: 'customer',
-}, {
-    title: '客户总量',
-    dataIndex: 'customertotal',
-}, {
-    title: '今日VIP',
-    dataIndex: 'todayVIP',
-}, {
-    title: 'VIP总量',
-    dataIndex: 'VIPtotal',
-}, {
-    title: '微信总量',
-    dataIndex: 'wxtotal',
-}, {
-    title: '今日关注',
-    dataIndex: 'follow',
-}, {
-    title: '今日取关',
-    dataIndex: 'cancel',
-}, {
-    title: '取关总量',
-    dataIndex: 'canceltotal',
-}];
+import ServerHandle from '../../../utils/ApiHandle';
+import $ from 'jquery';
+
+
 class UserData extends Component {
-    state = {
-    };
-    handleSearch = (e) => {
-        e.preventDefault();
-        this.props.form.validateFields((err, values) => {
-            console.log('Received values of form: ', values);
+    constructor(props){
+        super(props);
+        this.userData=this.userData.bind(this);
+        this.handleSearch=this.handleSearch.bind(this);
+        this.handleReset=this.handleReset.bind(this);
+        this.numChange=this.numChange.bind(this);
+        this.sizeChange=this.sizeChange.bind(this);
+        this.state={
+            num:1,
+            size:20,
+            dataList:[],
+            count:0,
+            userData:[],
+            // count:0,
+        }
+    }
+    componentDidMount(){
+        this.userData();
+        this.dataList();
+    }
+    /**
+     * 用户数据统计
+     */
+    userData(){
+        ServerHandle.GET({
+            url:'/web/statistics/customers'
+        }).then(result=>{
+            if(result.success){
+                this.setState({userData:result.data});
+             }
         });
+    }
+    dataList(){
+        let manager=$("#manager").val();
+        ServerHandle.GET({
+            url:'/web/statistics/list',
+            data:{
+                pageNum:this.state.num,
+                paheSize:this.state.size,
+                content:manager
+            }
+        }).then(result=>{
+            if(result.success){
+                this.setState({dataList:result.data,count:result.count});
+            }
+        })
+    }
+    numChange(page,pageSize){
+        this.setState({
+            num: page,
+            size: pageSize,
+        }, () => { this.dataList()});
+    }
+    sizeChange(current,size){
+        this.setState({
+            num: current,
+            size: size,
+        }, () => {this.dataList()});
+    }
+    handleSearch(){
+        this.dataList();
     }
     handleReset = () => {
         this.props.form.resetFields();
-        this.setState({
-            startValue: null,
-            endValue: null,
-        });
+        this.dataList();
     }
     render() {
         const { getFieldDecorator } = this.props.form;
-
+        const {num,size,count,userData,dataList}=this.state;
+        const columns = [{
+                title: '序号',
+                key: 'number',
+                render:(text,item,key)=>{
+                    return key+1
+                }
+            }, {
+                title: '真实姓名',
+                key: 'realname',
+                render:text=>{
+                    return text.realName
+                }
+            }, {
+                title: '手机号',
+                key: 'telphone ',
+                render:text=>{
+                    return text.telphone 
+                }
+            }, {
+                title: '今日客户经理',
+                key: 'addManagerNum ',
+                render:text=>{
+                    return text.addManagerNum 
+                }
+            }, {
+                title: '客户经理总量',
+                key: 'allManagerNum ',
+                render:text=>{
+                    return text.allManagerNum 
+                }
+            }, {
+                title: '今日客户',
+                key: 'addCustomerNum',
+                render:text=>{
+                    return text.addCustomerNum
+                }
+            }, {
+                title: '客户总量',
+                key: 'cumstomerNum',
+                render:text=>{
+                    return text.cumstomerNum
+                }
+            }, {
+                title: '今日VIP',
+                key: 'addVIPNum ',
+                render:text=>{
+                    return text.addVIPNum 
+                }
+            }, {
+                title: 'VIP总量',
+                key: 'vipNum',
+                render:text=>{
+                    return text.vipNum
+                }
+            }, {
+                title: '微信总量',
+                key: 'openNum  ',
+                render:text=>{
+                    return text.openNum  
+                }
+            }, {
+                title: '今日关注',
+                key: 'addAttentionNum ',
+                render:text=>{
+                    return text.addAttentionNum 
+                }
+            }, {
+                title: '今日取关',
+                key: 'cancelAttentionNum ',
+                render:text=>{
+                    return text.cancelAttentionNum 
+                }
+            }, {
+                title: '取关总量',
+                key: 'cancelOpenNum ',
+                render:text=>{
+                    return text.cancelOpenNum 
+                }
+        }];
         return (
             <div className="userData">
                 <div className="userData-detail">
@@ -114,10 +162,10 @@ class UserData extends Component {
                         <tbody  >
                             <tr className="number" cellSpacing="70">
                                 <th rowSpan="2">客户统计：</th>
-                                <td>10000000</td>
-                                <td>800</td>
-                                <td>10000</td>
-                                <td>20000</td>
+                                <td>{userData.allCustomerNum}</td>
+                                <td>{userData.todayAddCustomerNum }</td>
+                                <td>{userData.weekAddCustomerNum }</td>
+                                <td>{userData.monthAddCustomerNum }</td>
                             </tr>
                             <tr className="title">
                                 <td>客户总量</td>
@@ -127,10 +175,10 @@ class UserData extends Component {
                             </tr>
                             <tr className="number space">
                                 <th rowSpan="2">VIP统计：</th>
-                                <td>10000000</td>
-                                <td>800</td>
-                                <td>10000</td>
-                                <td>20000</td>
+                                <td>{userData.allCustomerNumVIP }</td>
+                                <td>{userData.todayAddCustomerNumVIP }</td>
+                                <td>{userData.weekAddCustomerNumVIP }</td>
+                                <td>{userData.monthAddCustomerNumVIP }</td>
                             </tr>
                             <tr className="title">
                                 <td>VIP总量</td>
@@ -140,10 +188,10 @@ class UserData extends Component {
                             </tr>
                             <tr className="number space">
                                 <th rowSpan="2">机构统计：</th>
-                                <td>10000000</td>
-                                <td>800</td>
-                                <td>10000</td>
-                                <td>20000</td>
+                                <td>{userData.allManagerNum }</td>
+                                <td>{userData.todayAddManagerNum }</td>
+                                <td>{userData.weekAddManagerNum }</td>
+                                <td>{userData.monthAddMangerNum}</td>
                             </tr>
                             <tr className="title">
                                 <td>客户经理总量</td>
@@ -153,10 +201,10 @@ class UserData extends Component {
                             </tr>
                             <tr className="number space">
                                 <th rowSpan="2">微信统计：</th>
-                                <td>10000000</td>
-                                <td>800</td>
-                                <td>10000</td>
-                                <td>20000</td>
+                                <td>{userData.allWechaterNum }</td>
+                                <td>{userData.todayAddWechaterNum}</td>
+                                <td>{userData.weekAddWechaterNum }</td>
+                                <td>{userData.monthAddWechaterNum }</td>
                             </tr>
                             <tr className="title">
                                 <td>微信用户总量</td>
@@ -171,30 +219,38 @@ class UserData extends Component {
                 <Form
                     ref="form"
                     className="RoleManage-form formdiv"
-                    onSubmit={this.handleSearch}
                 >
-                    <div className="RoleManage-form-input flex-row al-center ">
+                    <div className="RoleManage-form-input flex-row flex al-center ">
                         <span className="text-right title-width4">客户经理：</span>
                         <span className="input-width" >
-                            {getFieldDecorator(`field-${1}`, {})(
+                            {getFieldDecorator(`manager`, {})(
                                 <Input placeholder="请输入真实姓名、手机号" />
                             )}
                         </span>
                     </div>
                     <div className="RoleManage-form-Button flex">
-                        <Button type="primary" htmlType="submit">查询</Button>
+                        <Button type="primary" htmlType="submit" onClick={this.handleSearch}>查询</Button>
                         <Button style={{ marginLeft: 8 }} onClick={this.handleReset}>重置</Button>
                     </div>
                 </Form>
                 <Divider style={{ marginTop: 15, marginBottom: 15 }} />
                 <div className="tableList">
-                    <Table pagination={false} columns={columns} dataSource={data} bordered />
+                    <Table rowKey="id" pagination={false} columns={columns} dataSource={dataList} bordered />
                 </div>
                 <div className="Statistics">
-                    <span className="total">共 400 条记录 第 1 / 80 页</span>
+                    <span className="total">共 {count}条记录 第 {num} / {Math.ceil(count/size)} 页</span>
                     <span className="Pagination text-right">
                         <LocaleProvider locale={zhCN}>
-                            <Pagination total={50} showSizeChanger showQuickJumper hideOnSinglePage defaultCurrent={1} />
+                            <Pagination 
+                                total={count} 
+                                showSizeChanger={true}
+                                showQuickJumper={true}
+                                hideOnSinglePage={false}
+                                current={num}
+                                pageSize={size}
+                                onChange={this.numChange}
+                                onShowSizeChange={this.sizeChange}
+                             />
                         </LocaleProvider>
                     </span>
                 </div>

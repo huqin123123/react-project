@@ -2,97 +2,146 @@ import React, { Component } from 'react';
 import './myUser.css';
 import { LocaleProvider, Button, Table, Pagination, Form, Input, Divider } from 'antd';
 import zhCN from 'antd/lib/locale-provider/zh_CN';
-const data = [{
-    key: '1',
-    id: '1',
-    realname: '王小明01',
-    tel: '18213516200',
-    customer: '500',
-    customertotal: '5000',
-    todayVIP: '100',
-    VIPtotal: '1000',
-    wxtotal: '5000',
-    follow: '100',
-    cancel: '50',
-    canceltotal: '600'
-}, {
-    key: '2',
-    id: '2',
-    realname: '王小明02',
-    tel: '18213516201',
-    customer: '500',
-    customertotal: '5000',
-    todayVIP: '100',
-    VIPtotal: '1000',
-    wxtotal: '5000',
-    follow: '100',
-    cancel: '50',
-    canceltotal: '600'
-}, {
-    key: '3',
-    id: '3',
-    realname: '王小明03',
-    tel: '18213516202',
-    customer: '500',
-    customertotal: '5000',
-    todayVIP: '100',
-    VIPtotal: '1000',
-    wxtotal: '5000',
-    follow: '100',
-    cancel: '50',
-    canceltotal: '600'
-}];
+import ServerHandle from '../../../utils/ApiHandle';
+import $ from 'jquery';
+
 class MyUser extends Component {
-    state = {
-    };
-    handleSearch = (e) => {
-        e.preventDefault();
-        this.props.form.validateFields((err, values) => {
-            console.log('Received values of form: ', values);
-        });
+    constructor(props){
+        super(props);
+        this.handleSearch=this.handleSearch.bind(this);
+        this.handleReset=this.handleReset.bind(this);
+        this.dataList=this.dataList.bind(this);
+        this.statisticsData=this.statisticsData.bind(this);
+        this.numChange=this.numChange.bind(this);
+        this.sizeChange=this.sizeChange.bind(this);
+        this.state = {
+            num:1,
+            size:20,
+            statisticsData:[],//统计数据
+            dataList:[],
+            count:0,
+        }
     }
-    handleReset = () => {
-        this.props.form.resetFields();
+    componentDidMount(){
+        this.statisticsData();
+        this.dataList();
+    }
+    /**
+     * 统计数据
+     */
+    statisticsData(){
+        ServerHandle.GET({
+            url:'/web/statisticsByUser/customers',
+        }).then(result=>{
+            if(result.success){
+               this.setState({statisticsData:result.data});
+            }
+        })
+    }
+    dataList(){
+        let manager=$("#manager").val();
+        ServerHandle.GET({
+            url:'/web/statisticsByUser/list',
+            data:{
+                pageNum:this.state.num,
+                paheSize:this.state.size,
+                content:manager
+            }
+        }).then(result=>{
+            if(result.success){
+                this.setState({dataList:result.data,count:result.count});
+            }
+        })
+    }
+    numChange(page,pageSize){
         this.setState({
-            startValue: null,
-            endValue: null,
-        });
+            num: page,
+            size: pageSize,
+        }, () => { this.dataList()});
+    }
+    sizeChange(current,size){
+        this.setState({
+            num: current,
+            size: size,
+        }, () => {this.dataList()});
+    }
+    handleSearch() {
+        this.dataList();
+    }
+    handleReset(){
+        this.props.form.resetFields();
+        this.dataList();
+      
     }
     render() {
         const { getFieldDecorator } = this.props.form;
+        const {count,size,num,dataList,statisticsData}=this.state;
         const columns = [{
-            title: '序号',
-            dataIndex: 'id'
-        }, {
-            title: '真实姓名',
-            dataIndex: 'realname',
-        }, {
-            title: '手机号',
-            dataIndex: 'tel',
-        }, {
-            title: '今日客户',
-            dataIndex: 'customer',
-        }, {
-            title: '客户总量',
-            dataIndex: 'customertotal',
-        }, {
-            title: '今日VIP',
-            dataIndex: 'todayVIP',
-        }, {
-            title: 'VIP总量',
-            dataIndex: 'VIPtotal',
-        }, {
-            title: '微信总量',
-            dataIndex: 'wxtotal',
-        }, {
-            title: '今日关注',
-            dataIndex: 'follow',
-        }, {
-            title: '今日取关',
-            dataIndex: 'cancel',
-        }, {
-            title: '取关总量',
-            dataIndex: 'canceltotal',
+                title: '序号',
+                key: 'number',
+                render:(text,item,key)=>{
+                    return key+1
+                }
+            }, {
+                title: '真实姓名',
+                key: 'realName',
+                render:text=>{
+                    return text.realName
+                }
+            }, {
+                title: '手机号',
+                key: 'telphone',
+                render:text=>{
+                    return text.telphone
+                }
+            }, {
+                title: '今日客户',
+                key: 'addCustomerNum',
+                render:text=>{
+                    return text.addCustomerNum 
+                }
+            }, {
+                title: '客户总量',
+                key: 'cumstomerNum',
+                render:text=>{
+                    return text.cumstomerNum 
+                }
+            }, {
+                title: '今日VIP',
+                key: 'addVIPNum',
+                render:text=>{
+                    return text.addVIPNum 
+                }
+            }, {
+                title: 'VIP总量',
+                key: 'vipNum ',
+                render:text=>{
+                    return text.vipNum 
+                }
+            }, {
+                title: '微信总量',
+                key: 'openNum ',
+                render:text=>{
+                    return text.openNum 
+                }
+            }, {
+                title: '今日关注',
+                key: 'addAttentionNum ',
+                render:text=>{
+                    return text.addAttentionNum 
+                }
+            }, {
+                title: '今日取关',
+                key: 'cancelAttentionNum ',
+                render:text=>{
+                    return text.cancelAttentionNum 
+                }
+            }, {
+                title: '取关总量',
+                key: 'cancelOpenNum ',
+                render:text=>{
+                    return text.cancelOpenNum 
+                }
         }];
         return (
             <div className="myUser">
@@ -101,10 +150,10 @@ class MyUser extends Component {
                         <tbody  >
                             <tr className="number" cellSpacing="70">
                                 <th rowSpan="2">客户统计：</th>
-                                <td>10000000</td>
-                                <td>800</td>
-                                <td>10000</td>
-                                <td>20000</td>
+                                <td>{statisticsData.allCustomerNum}</td>
+                                <td>{statisticsData.todayAddCustomerNum}</td>
+                                <td>{statisticsData.weekAddCustomerNum}</td>
+                                <td>{statisticsData.monthAddCustomerNum}</td>
                             </tr>
                             <tr className="title">
                                 <td>客户总量</td>
@@ -114,10 +163,10 @@ class MyUser extends Component {
                             </tr>
                             <tr className="number space">
                                 <th rowSpan="2">VIP统计：</th>
-                                <td>10000000</td>
-                                <td>800</td>
-                                <td>10000</td>
-                                <td>20000</td>
+                                <td>{statisticsData.allCustomerNumVIP}</td>
+                                <td>{statisticsData.todayAddCustomerNumVIP }</td>
+                                <td>{statisticsData.weekAddCustomerNumVIP }</td>
+                                <td>{statisticsData.monthAddCustomerNumVIP }</td>
                             </tr>
                             <tr className="title">
                                 <td>VIP总量</td>
@@ -127,10 +176,10 @@ class MyUser extends Component {
                             </tr>
                             <tr className="number space">
                                 <th rowSpan="2">机构统计：</th>
-                                <td>10000000</td>
-                                <td>800</td>
-                                <td>10000</td>
-                                <td>20000</td>
+                                <td>{statisticsData.allManagerNum }</td>
+                                <td>{statisticsData.todayAddManagerNum }</td>
+                                <td>{statisticsData.weekAddManagerNum }</td>
+                                <td>{statisticsData.monthAddMangerNum}</td>
                             </tr>
                             <tr className="title">
                                 <td>客户经理总量</td>
@@ -140,10 +189,10 @@ class MyUser extends Component {
                             </tr>
                             <tr className="number space">
                                 <th rowSpan="2">微信统计：</th>
-                                <td>10000000</td>
-                                <td>800</td>
-                                <td>10000</td>
-                                <td>20000</td>
+                                <td>{statisticsData.allWechaterNum }</td>
+                                <td>{statisticsData.todayAddWechaterNum }</td>
+                                <td>{statisticsData.weekAddWechaterNum }</td>
+                                <td>{statisticsData.monthAddWechaterNum }</td>
                             </tr>
                             <tr className="title">
                                 <td>微信用户总量</td>
@@ -158,30 +207,38 @@ class MyUser extends Component {
                 <Form
                     ref="form"
                     className="RoleManage-form formdiv"
-                    onSubmit={this.handleSearch}
                 >
-                    <div className="RoleManage-form-input flex-row al-center ">
+                    <div className="RoleManage-form-input flex-row flex al-center ">
                         <span className="text-right title-width4">客户经理：</span>
                         <span className="input-width" >
-                            {getFieldDecorator(`field-${1}`, {})(
+                            {getFieldDecorator(`manager`, {})(
                                 <Input placeholder="请输入真实姓名、手机号" />
                             )}
                         </span>
                     </div>
                     <div className="RoleManage-form-Button flex">
-                        <Button type="primary" htmlType="submit">查询</Button>
+                        <Button type="primary" htmlType="submit" onClick={this.handleSearch}>查询</Button>
                         <Button style={{ marginLeft: 8 }} onClick={this.handleReset}>重置</Button>
                     </div>
                 </Form>
                 <Divider style={{ marginTop: 15, marginBottom: 15 }} />
                 <div className="tableList">
-                    <Table pagination={false} columns={columns} dataSource={data} bordered />
+                    <Table rowKey="id" pagination={false} columns={columns} dataSource={dataList} bordered />
                 </div>
                 <div className="Statistics">
-                    <span className="total">共 400 条记录 第 1 / 80 页</span>
+                    <span className="total">共 {count}条记录 第 {num} / {Math.ceil(count/size)}页</span>
                     <span className="Pagination text-right">
                         <LocaleProvider locale={zhCN}>
-                            <Pagination total={50} showSizeChanger showQuickJumper hideOnSinglePage defaultCurrent={1} />
+                            <Pagination 
+                                total={count} 
+                                showSizeChanger={true}
+                                showQuickJumper={true}
+                                hideOnSinglePage={false}
+                                current={num}
+                                pageSize={size}
+                                onChange={this.numChange}
+                                onShowSizeChange={this.sizeChange}
+                            />
                         </LocaleProvider>
                     </span>
                 </div>

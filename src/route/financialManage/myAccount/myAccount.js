@@ -2,135 +2,127 @@ import React, { Component } from 'react';
 import './myAccount.css';
 import { LocaleProvider, Button, Table, Pagination, Form, Input, DatePicker, Divider } from 'antd';
 import zhCN from 'antd/lib/locale-provider/zh_CN';
-const columns = [{
-    title: '序号',
-    dataIndex: 'id'
-}, {
-    title: '流水时间',
-    dataIndex: 'time',
-}, {
-    title: '流水单号',
-    dataIndex: 'number',
-}, {
-    title: '客户姓名',
-    dataIndex: 'name',
-}, {
-    title: '客户手机号',
-    dataIndex: 'tel',
-}, {
-    title: '消费余额',
-    dataIndex: 'consumptionbalance',
-}, {
-    title: '账户余额',
-    dataIndex: 'accountbalance',
-}, {
-    title: '备注',
-    dataIndex: 'remark',
-}];
-const data = [{
-    key: '1',
-    id: '1',
-    time: '2018-04-05 10:15:25',
-    number: 'PO1000000001',
-    name: '王小明01',
-    tel: '18213516200',
-    consumptionbalance: '300.00',
-    accountbalance: '1000.00',
-    remark: '订阅1月VIP',
-}, {
-    key: '2',
-    id: '2',
-    time: '2018-03-05 10:15:25',
-    number: 'PO1000000002',
-    name: '王小明02',
-    tel: '18213516201',
-    consumptionbalance: '300.00',
-    accountbalance: '1000.00',
-    remark: '订阅1月VIP',
-}, {
-    key: '3',
-    id: '3',
-    time: '2018-02-05 10:15:25',
-    number: 'PO1000000001',
-    name: '王小明03',
-    tel: '18213516202',
-    consumptionbalance: '300.00',
-    accountbalance: '1000.00',
-    remark: '订阅1月VIP',
-}];
+import ServerHandle from '../../../utils/ApiHandle';
+import $ from 'jquery';
+
 
 class MyAccount extends Component {
-    state = {
-        startValue: null,
-        endValue: null,
-        endOpen: false,
-    };
-    /**
-     * disabledDate约束开始和结束时间
-     */
-    disabledStartDate = (startValue) => {
-        const endValue = this.state.endValue;
-        if (!startValue || !endValue) {
-            return false;
+    constructor(props){
+        super(props);
+        this.handleQuery=this.handleQuery.bind(this);
+        this.accountFlow=this.accountFlow.bind(this);
+        this.dataList=this.dataList.bind(this);
+        this.numChange=this.numChange.bind(this);
+        this.sizeChange=this.sizeChange.bind(this);
+        this.state={
+            num:1,
+            size:20,
+            dataList:[],
+            count:0,
+            userAccount:[],//员工账户流水详情
         }
-        return startValue.valueOf() > endValue.valueOf();
     }
-    disabledEndDate = (endValue) => {
-        const startValue = this.state.startValue;
-        if (!endValue || !startValue) {
-            return false;
-        }
-        return endValue.valueOf() <= startValue.valueOf();
+    componentDidMount(){
+        this.accountFlow();
+        this.dataList();
     }
-    onChange = (field, value) => {
-        this.setState({
-            [field]: value,
+    accountFlow(){
+        ServerHandle.GET({
+            url:'/web/account/balance',
+            data:{}
+        }).then(result=>{
+            this.setState({userAccount:result.data})
+        })
+    }
+    dataList(){
+        let flowNo=$("#oddNumbers").val();
+        let customer=$("#customer").val();
+        let start=$(".financeMange #createTimeStart input").val();
+        let end=$(".financeMange #createTimeEnd  input").val();
+        ServerHandle.GET({
+            url:'/web/account/list',
+            data:{
+                pageNum:this.state.num,
+                pageSize:this.state.size,
+                flowNo:flowNo,
+                createTimeStart:start,
+                createTimeEnd:end,
+                customerMsg:customer,
+            }
+        }).then(result=>{
+            if(result.success){
+                console.log(result)
+                this.setState({count:result.count,dataList:result.data})
+            }
         });
     }
-    onStartChange = (value) => {
-        this.onChange('startValue', value);
+    handleQuery(){
+        this.dataList();
     }
-
-    onEndChange = (value) => {
-        this.onChange('endValue', value);
+    numChange(page,pageSize){
+        this.setState({num:page,size:pageSize},()=>{
+            this.dataList();
+        })
     }
-
-    handleStartOpenChange = (open) => {
-        if (!open) {
-            this.setState({ endOpen: true });
-        }
-    }
-    handleEndOpenChange = (open) => {
-        this.setState({ endOpen: open });
-    }
-
-    handleSearch = (e) => {
-        e.preventDefault();
-        this.props.form.validateFields((err, values) => {
-            console.log('Received values of form: ', values);
-        });
+    sizeChange(current,size){
+        this.setState({num:current,size:size},()=>{
+            this.dataList();
+        })
     }
     handleReset = () => {
         this.props.form.resetFields();
-        this.setState({
-            startValue: null,
-            endValue: null,
-        });
     }
     render() {
         const { getFieldDecorator } = this.props.form;
-        const { startValue, endValue, endOpen, } = this.state;
+        const { num,size,count,dataList,userAccount } = this.state;
+        const columns = [{
+                title: '序号',
+                key: 'number',
+                render:(text,item,key)=>{
+                    return key+1
+                }
+            }, {
+                title: '流水时间',
+                dataIndex: 'createTime',
+            }, {
+                title: '流水单号',
+                dataIndex: 'flowNo',
+            }, {
+                title: '客户姓名',
+                key:'name',
+                render:text=>{
+                    return text.name
+                }
+            }, {
+                title: '客户手机号',
+                key: 'customerTelphone',
+                render:text=>{
+                    return text.customerTelphone|| '无'
+                }
+            }, {
+                title: '消费金额',
+                key: 'price',
+                render:text=>{
+                    return text.price || '无'
+                }
+            }, {
+                title: '账户余额',
+                dataIndex: 'userBalance',
+            }, {
+                title: '备注',
+                dataIndex: 'remark',
+    }];
         return (
             <div className="myAccount">
                 <div className="myAccount-detail">
-                    <i>【员工姓名】账户流水详情</i>
+                    <i>{'【'+userAccount.userName+'】账户流水详情'}</i>
                     <Divider style={{ marginTop: 15, marginBottom: 15 }} />
-                    <table className="myAccount-table">
+                    <table className="myAccount-table" >
                         <tbody>
                             <tr className="myAccount-table-data">
-                                <td>￥1000.00</td>
-                                <td>￥8000.00</td>
-                                <td>￥8000.00</td>
+                                <td>￥{userAccount.money }</td>
+                                <td>￥{userAccount.totalRevenue }</td>
+                                <td>￥{userAccount.totalSettlement }</td>
                             </tr>
                             <tr className="myAccount-table-text">
                                 <td>账户余额</td>
@@ -143,63 +135,68 @@ class MyAccount extends Component {
                 </div>
                 <Form
                     ref="form"
-                    className="formdiv"
-                    onSubmit={this.handleSearch}
-                >
-                    <div className="al-center flex flex-row ">
-                        <span className="text-right title-width4">流水单号：</span>
-                        <span className="input-width">
-                            {getFieldDecorator(`field-${1}`, {})(
-                                <Input placeholder="请输入" />
-                            )}
-                        </span>
+                    className="flex-column"
+                    >
+                    <div className=" formdiv formspace">
+                        <div className="al-center flex flex-row ">
+                            <span className="text-right title-width4">流水单号：</span>
+                            <span className="input-width">
+                                {getFieldDecorator(`oddNumbers`, {})(
+                                    <Input placeholder="请输入" />
+                                )}
+                            </span>
+                        </div>
+                        <div className="al-center flex flex-row ">
+                            <span className="text-right title-width">客户：</span>
+                            <span className="input-width">
+                                {getFieldDecorator(`customer`, {})(
+                                    <Input placeholder="请输入客户姓名、手机号" />
+                                )}
+                            </span>
+                        </div>
                     </div>
-                    <div className="al-center flex flex-row ">
-                        <span className="text-right title-width">客户：</span>
-                        <span className="input-width">
-                            {getFieldDecorator(`field-${2}`, {})(
-                                <Input placeholder="请输入客户姓名、手机号" />
-                            )}
-                        </span>
-                    </div>
-                    <div className="al-center flex-row  ">
-                        <span className="text-right title-width">流水日期：</span>
-                        <span>
-                            <DatePicker
-                                disabledDate={this.disabledStartDate}
-                                format="YYYY-MM-DD"
-                                value={startValue}
-                                placeholder="请输入"
-                                onChange={this.onStartChange}
-                                onOpenChange={this.handleStartOpenChange}
-
-                            />-
-                                <DatePicker
-                                disabledDate={this.disabledEndDate}
-                                format="YYYY-MM-DD "
-                                value={endValue}
-                                placeholder="请输入"
-                                onChange={this.onEndChange}
-                                open={endOpen}
-                                onOpenChange={this.handleEndOpenChange}
-
-                            />
-                        </span>
-                    </div>
-                    <div className=" flex text-center">
-                        <Button type="primary" htmlType="submit">查询</Button>
-                        <Button style={{ marginLeft: 8 }} onClick={this.handleReset}>重置</Button>
+                    <div className=" formdiv ">
+                        <div className="al-center flex-row flex ">
+                            <span className="text-right title-width4">流水日期：</span>
+                            <span className="flex picker-widthTwo financeMange">
+                                <span>
+                                    <LocaleProvider locale={zhCN} >
+                                        {getFieldDecorator('createTimeStart', {})(
+                                            <DatePicker />
+                                        )}
+                                    </LocaleProvider >-
+                                    <LocaleProvider locale={zhCN} >
+                                        {getFieldDecorator('createTimeEnd', {})(
+                                            <DatePicker />
+                                        )}
+                                    </LocaleProvider >
+                                </span>
+                            </span>
+                        </div>
+                        <div className="flex">
+                            <Button type="primary" htmlType="submit" onClick={this.handleQuery}>查询</Button>
+                            <Button style={{ marginLeft: 8 }} onClick={this.handleReset}>重置</Button>
+                        </div>
                     </div>
                 </Form>
                 <Divider style={{ marginTop: 15, marginBottom: 15 }} />
                 <div className="tableList">
-                    <Table pagination={false} columns={columns} dataSource={data} bordered />
+                    <Table rowKey="id" pagination={false} columns={columns} dataSource={dataList} bordered />
                 </div>
                 <div className="Statistics">
-                    <span className="total">共 400 条记录 第 1 / 80 页</span>
+                    <span className="total">共{count}条记录 第{num}/{Math.ceil(count/size)}页</span>
                     <span className="Pagination text-right">
                         <LocaleProvider locale={zhCN}>
-                            <Pagination total={50} showSizeChanger showQuickJumper hideOnSinglePage defaultCurrent={1} />
+                            <Pagination 
+                                total={count} 
+                                showSizeChanger={true}
+                                showQuickJumper={true}
+                                hideOnSinglePage={false}
+                                current={num}
+                                pageSize={size}
+                                onChange={this.numChange}
+                                onShowSizeChange={this.sizeChange}
+                            />
                         </LocaleProvider>
                     </span>
                 </div>

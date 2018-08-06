@@ -59,8 +59,7 @@ export default class Manage extends Component {
             num: page,
             size: pageSize,
         }, () => {
-            console.log(this.state.num, this.state.size);
-            // this.bindData();
+            this.bindData();
         })
     }
     onShowSizeChange(current, size) {
@@ -69,8 +68,7 @@ export default class Manage extends Component {
             num: current,
             size: size,
         }, () => {
-            console.log(this.state.num, this.state.size);
-            // this.bindData();
+            this.bindData();
         })
     }
     showModal(id) {
@@ -168,7 +166,7 @@ export default class Manage extends Component {
                                  this.showModal(text.id) }}>冻结/解冻
                             </Menu.Item>
                             <Menu.Item onClick={()=>{
-                                this.props.history.push('/index/quantClassroom/edit',text)}}>编辑</Menu.Item>
+                                this.props.history.push('/index/quantClassroom/edit',text);console.log(text)}}>编辑</Menu.Item>
                         </Menu>
                     }>
                         <Button style={{ marginLeft: 8 }}>

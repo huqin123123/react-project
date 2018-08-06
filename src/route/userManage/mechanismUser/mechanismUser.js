@@ -1,104 +1,304 @@
 import React, { Component } from 'react';
-import {LocaleProvider, Button, Divider, Input, Cascader, Form, Icon, Table, Pagination, Menu, Dropdown, Modal, Row, Col, Tooltip } from 'antd';
+import { LocaleProvider, Button, Divider, Input, Cascader, Form, Icon, Table, Pagination, Menu, Dropdown, Modal, Row, Col, Tooltip, message,Select } from 'antd';
 import zhCN from 'antd/lib/locale-provider/zh_CN';
+import ServerHandle from '../../../utils/ApiHandle';
+import $ from 'jquery';
 const { TextArea } = Input;
 //员工管理
-const options = [{
-    value: '在职',
-    label: '在职'
-}, {
-    value: '离职',
-    label: '离职'
-}];
+
 const option = [{
-    value: '是',
-    label: '是'
+    value: '1',
+    label: '是',
 }, {
-    value: '否',
-    label: '否'
+    value: '2',
+    label: '否',
 }]
-const data = [{
-    key: '1',
-    id:'2008000101',
-    name: 'login01',
-    realname: '王小明01',
-    tel:'18213516200',
-    staff: '001：管理员',
-    mechanismdivide: '80.00%',
-    maintaindivide: '20.00%',
-    time: '2018-04-05 10:15:25'
-}, {
-    key: '2',
-    id:'2008000102',
-    name: 'login02',
-    realname: '王小明02',
-    tel:'18213516201',
-    staff: '001：管理员',
-    mechanismdivide: '80.00%',
-    maintaindivide: '20.00%',
-    time: '2018-04-05 10:15:25'
-},{
-    key: '3',
-    id:'2008000103',
-    name: 'login03',
-    realname: '王小明03',
-    tel:'18213516202',
-    staff: '001：管理员',
-    mechanismdivide: '80.00%',
-    maintaindivide: '20.00%',
-    time: '2018-04-05 10:15:25'
-},{
-    key: '4',
-    id:'2008000104',
-    name: 'login04',
-    realname: '王小明04',
-    tel:'18213516203',
-    staff: '001：管理员',
-    mechanismdivide: '80.00%',
-    maintaindivide: '20.00%',
-    time: '2018-04-05 10:15:25'
-}];
+
 class MechanismUser extends Component {
-    state = {
-        visible1: false, visible2: false, visible3: false, visible4: false, visible5: false,
-        confirmLoading: false
+    constructor(props) {
+        super(props);
+        this.bindData = this.bindData.bind(this);
+        this.numChange = this.numChange.bind(this);
+        this.onShowSizeChange = this.onShowSizeChange.bind(this);
+        this.handleSearch = this.handleSearch.bind(this);
+        this.showModal1 = this.showModal1.bind(this);
+        this.showModal2 = this.showModal2.bind(this);
+        this.showModal3=this.showModal3.bind(this);
+        this.showModal4=this.showModal4.bind(this);
+        this.showModal5=this.showModal5.bind(this);
+        this.handleEdit=this.handleEdit.bind(this);
+        this.handleAdd=this.handleAdd.bind(this);
+        this.userList=this.userList.bind(this);
+        this.handleEditManager=this.handleEditManager.bind(this);
+        this.handleResetPsw=this.handleResetPsw.bind(this);
+        this.state = {
+            visible1: false,
+            visible2: false,
+            visible3: false,
+            visible4: false,
+            visible5: false,
+            confirmLoading: false,
+            num: 1,
+            size: 20,
+            //客户经理列表
+            managerList: [],
+            count: 0,
+            //员工列表
+            userList:[],
+            //员工姓名
+            value:'',
+            //员工id
+            userId:[],
+            managerId:0,
+            // managerDivideScale:'',
+            isEmployee:'',
+            userName:'',
+            loginTel:'',
+        }
     }
-    handleSearch = (e) => {
-        e.preventDefault();
-        this.props.form.validateFields((err, values) => {
-        });
+    componentDidMount() {
+        this.bindData();        
+    }
+    bindData() {
+        let manager = $('#managerMsg').val();
+        let employee = $('#employee').val()
+        ServerHandle.GET({
+            url: '/web/manager/list',
+            data: {
+                pageNum: this.state.num,
+                pageSize: this.state.size,
+                managerMsg: manager,
+                employeeMsg: employee,
+            }
+        }).then(result => {
+            if (result.success) {
+                console.log(result);
+                this.setState({
+                    managerList: result.data,
+                    count: result.count,
+                })
+            }
+        })
+    }
+    numChange(page, pageSize) {
+        this.setState({
+            num: page,
+            size: pageSize,
+        }, () => { this.bindData() })
+    }
+    onShowSizeChange(current, size) {
+        this.setState({
+            num: current,
+            size: size,
+        }, () => { this.bindData() })
+    }
+    handleSearch() {
+        this.bindData()
     }
     handleReset = () => {
         this.props.form.resetFields();
     }
-    showModal1 = () => {//添加客户经理
-        this.setState({ visible1: true });
+    //获取员工列表
+    userList(){
+        ServerHandle.GET({
+            url:'/web/user/admin/listUser',
+            data:{}
+        }).then(result=>{
+            this.setState({userList:result.data},()=>{})
+        })
     }
-    showModal2 = () => {//VIP分成
-        this.setState({ visible2: true });
+      //添加客户经理 
+    showModal1(){
+          this.setState({visible1:true},()=>{
+              this.userList();
+          })
     }
-    showModal3 = () => {//编辑
-        this.setState({ visible3: true });
-    }
-    showModal4 = () => {//重置密码
-        this.setState({ visible4: true });
-    }
-    showModal5 = () => {//详情
-        this.setState({ visible5: true });
-    }
-    handleOk = (e) => {
+    handleAdd (){
+        this.props.form.validateFields((err, values) => {});
+        let telphone=$("#tel").val();
+        let username=$("#name").val();
+        let realname=$("#realName").val();
+        let money=$("#money").val();
+        let remark =$("#remark").text();
+        let isEmployee =$("#mechanismForm .ant-cascader-picker-label").text();
         this.setState({
             confirmLoading: true,
+             visible1: true }, () => {
+            ServerHandle.POST({
+                url: '/web/manager/addManager',
+                data: {
+                    username: username,
+                    telphone: telphone,
+                    realNmae: realname,
+                    money: money,
+                    userId: this.state.userId,
+                    remark: remark,
+                    isEmployee: isEmployee === "是" ? 1 : 2,
+                }
+            }).then(result=>{
+                if(result.success){
+                    setTimeout(() => {
+                        this.setState({
+                            visible1: false,
+                            confirmLoading: false,
+                        },()=>{
+                            message.success("添加成功");
+                            this.bindData();
+                        });
+                    }, 2000);
+                }else{
+                 this.setState({confirmLoading:false},()=>{
+                    message.error(result.message);
+                 })
+                }
+            })
         });
-        setTimeout(() => {
-            this.setState({
-                visible1: false, visible2: false, visible3: false, visible4: false, visible5: false,
-                confirmLoading: false,
-            });
-        }, 2000);
-        e.preventDefault();
-        this.props.form.validateFields((err, values) => {
-        });
+    }
+   //VIP分成
+    showModal2 = (text) => {
+        this.setState({ 
+            visible2: true ,
+            managerId:text.id,
+            userName:text.realName,
+        },()=>{
+            this.props.form.setFieldsValue({divide:text.managerDivideScale});               
+        }); 
+    }
+    handleEdit(){
+        this.props.form.validateFields((err, values) => {});
+        let divide=$("#divide").val();
+        this.setState({managerDivideScale:divide},()=>{
+            ServerHandle.POST({
+                url:'/web/manager/updateDivide',
+                data:{managerId:this.state.managerId,managerDivideScale:divide}
+            }).then(result=>{
+                if(result.success){
+                    this.setState({confirmLoading:true})
+                    setTimeout(()=>{
+                        this.setState({
+                            confirmLoading:false,
+                            visible2:false
+                        },()=>{message.success("编辑成功");this.bindData()})
+                    },2000)
+                }else{
+                 message.error("编辑失败")   
+                }
+            })
+        });  
+    }
+    //编辑客户经理
+    showModal3(text) {
+        this.setState({ 
+            visible3: true,
+            managerId:text.id,
+         },()=>{
+            this.userList();
+             ServerHandle.GET({
+                 url:'/web/manager/detail',
+                 data:{managerId:text.id}
+             }).then(result=>{
+                 if(result.success){
+                     this.setState({
+                         isEmployee:result.data.isEmployee,
+                         userId:result.data.userId
+                        },()=>{
+                            this.props.form.setFieldsValue({
+                                managerId:text.id,
+                                telphone:result.data.telphone,
+                                username:result.data.username,
+                                realName:result.data.realName,
+                                managerDivideScale:result.data.managerDivideScale,
+                                userId:result.data.employName,
+                                account:result.data.money,
+                                remarks:result.data.remark,
+                                });  
+                        })
+                 }
+             })
+         });
+    }
+    handleEditManager(){
+        this.setState({confirmLoading:true});
+        this.props.form.validateFields((err, values) => {});   
+        let isEmployee =$("#edit .ant-cascader-picker-label").text();
+        let money=$("#account").val();
+        let remark=$("#remarks").val();
+        ServerHandle.POST({
+            url:'/web/manager/edit',
+            data:{
+                id:this.state.managerId,
+                employeeId:this.state.userId,
+                accout:money,
+                remark:remark,
+                editIsEmployee:isEmployee ==="是" ? 1:2,
+            }
+        }).then(result=>{
+            if(result.success){
+                this.setState({confirmLoading:true},()=>{
+                    setTimeout(() => {
+                        this.setState({
+                            visible3: false,
+                            confirmLoading: false,
+                        },()=>{
+                            message.success("编辑成功");
+                            this.bindData();
+                        });
+                    }, 2000);
+                });
+            }else{
+                message.error("编辑失败")
+            }
+        })
+    }
+    //重置密码
+    showModal4 (text) {
+        this.setState({ visible4: true,managerId:text.id,loginTel:text.telphone});
+    }
+    handleResetPsw(){
+        ServerHandle.POST({
+            url:'/web/manager/reset',
+            data:{managerId:this.state.managerId}
+        }).then(result=>{
+            if(result.success){
+                this.setState({confirmLoading:true});
+                setTimeout(()=>{
+                    this.setState({
+                        visible4:false,
+                        confirmLoading:false,
+                    },()=>{message.success("密码重置成功")})
+                },2000);
+            }else{
+                message.error("密码重置失败")
+            }
+        })
+    }
+    //客户经理详情
+    showModal5(text) {
+        this.setState({ visible5: true });
+        this.setState({ 
+            visible3: true,
+            managerId:text.id
+         },()=>{
+            this.userList();
+             ServerHandle.GET({
+                 url:'/web/manager/detail',
+                 data:{managerId:text.id}
+             }).then(result=>{
+                 if(result.success){
+                     this.props.form.setFieldsValue({
+                        manageId:text.id,
+                        Tel:result.data.telphone,
+                        userName:result.data.username,
+                        rename:result.data.realName,
+                        Divide:result.data.managerDivideScale,
+                        User:result.data.employName || '无',
+                        Money:result.data.money,
+                        isStaff:result.data.isEmployee === 1?'是':'否',
+                        remarkS:result.data.remark || '无',
+                        });  
+                 }
+             })
+         });
     }
     handleCancel = () => {
         this.setState({
@@ -106,72 +306,88 @@ class MechanismUser extends Component {
         });
     }
     render() {
-        const menu = (
-            <Menu>
-                <Menu.Item>
-                    <a onClick={this.showModal2} >VIP分成</a>
-                </Menu.Item>
-                <Menu.Item>
-                    <a onClick={this.showModal3} >编辑</a>
-                </Menu.Item>
-                <Menu.Item>
-                    <a onClick={this.showModal4} >重置密码</a>
-                </Menu.Item>
-                <Menu.Item>
-                    <a onClick={this.showModal5} >详情</a>
-                </Menu.Item>
-            </Menu>
-        );
         const columns = [{
-            title: 'ID号',
-            dataIndex: 'id',
-            key: 'id',
-        }, {
-            title: '用户名',
-            dataIndex: 'name',
-            key: 'name',
-        }, {
-            title: '真实姓名',
-            dataIndex: 'realname',
-            key: 'realname',
-        }, {
-            title: '手机号',
-            dataIndex: 'tel',
-            key: 'tel',
-        }, {
-            title: '维护人员',
-            dataIndex: 'staff',
-            key: 'staff',
-        }, {
-            title: '机构用户分成',
-            dataIndex: 'mechanismdivide',
-            key: 'mechanismdivide',
-        }, {
-            title: '维护人员分成',
-            dataIndex: 'maintaindivide',
-            key: 'maintaindivide',
-        }, {
-            title: '注册时间',
-            dataIndex: 'time',
-            key: 'time',
-        }, {
-            title: '操作',
-            dataIndex: 'operation',
-            key: 'operation',
-            render: text => (
-                <Dropdown overlay={menu}>
-                    <Button style={{ marginLeft: 8 }}>
-                        操作 <Icon type="down" />
-                    </Button>
-                </Dropdown>
-            )
+                title: 'ID号',
+                key: 'id',
+                render: (text) => {
+                    return text.id
+                }
+            }, {
+                title: '用户名',
+                key: 'username',
+                render: (text) => {
+                    return text.username || '-'
+                }
+            }, {
+                title: '真实姓名',
+                key: 'realname',
+                render: (text) => {
+                    return text.realName || '-'
+                }
+            }, {
+                title: '手机号',
+                key: 'tel',
+                render: (text) => {
+                    return text.telphone || '-'
+                }
+            }, {
+                title: '维护人员',
+                key: 'staff',
+                render: (text) => {
+                    return `${text.employeeID} _ ${text.employName}`
+                }
+            }, {
+                title: '机构用户分成',
+                key: 'mechanismdivide',
+                render: (text) => {
+                    return text.managerDivideScale 
+                }
+            }, {
+                title: '维护人员分成',
+                key: 'maintaindivide',
+                render: (text) => {
+                    return text.userDivideScale
+                }
+            }, {
+                title: '注册时间',
+                key: 'time',
+                render: (text) => {
+                    return text.createTime || '-'
+                }
+            }, {
+                title: '操作',
+                key: 'operation',
+                render: (text) => (
+                    <Dropdown overlay={
+                        <Menu>
+                            <Menu.Item onClick={()=>{this.showModal2(text)}}>VIP分成
+                            </Menu.Item>
+                            <Menu.Item onClick={()=>{this.showModal3(text)}}>编辑
+                            </Menu.Item>
+                            <Menu.Item onClick={()=>{this.showModal4(text)}} >重置密码
+                            </Menu.Item>
+                            <Menu.Item onClick={()=>{this.showModal5(text)}} >详情
+                            </Menu.Item>
+                        </Menu>
+                    }>
+                        <Button style={{ marginLeft: 8 }}>
+                            操作 <Icon type="down" />
+                        </Button>
+                    </Dropdown>
+                )
         }];
         const { getFieldDecorator } = this.props.form;
-        const { confirmLoading } = this.state;
+        const { confirmLoading, count, num, size, managerList,userList,isEmployee,userName,loginTel } = this.state;
         const formItemLayout = {
             labelCol: { span: 8 },
             wrapperCol: { span: 16 },
         };
+        const children = [];
+        const Option = Select.Option;
+        userList.forEach((item, index) => {
+            children.push(<Option key={item} value={item.id.toString()}>{item.userName}</Option>);
+            return false;
+        })
         return (
             <div className="mechanismUser">
                 <div className="mechanismUser-query">
@@ -181,12 +397,11 @@ class MechanismUser extends Component {
                 <Form
                     ref="form"
                     className="mechanismUser-form form"
-                    onSubmit={this.handleSearch}
-                >
+                    >
                     <div className="mechanismUser-form-input input al-center ">
                         <span className="text-right title-width4">客户经理：</span>
                         <span className="input-width" >
-                            {getFieldDecorator(`field-${1}`, {})(
+                            {getFieldDecorator(`managerMsg`, {})(
                                 <Input placeholder="姓名、联系电话、ID号" />
                             )}
                         </span>
@@ -194,43 +409,52 @@ class MechanismUser extends Component {
                     <div className="mechanismUser-form-Cascader cascader al-center">
                         <span className="text-right title-width">员工：</span>
                         <span className="input-width">
-                            {getFieldDecorator(`field-${2}`, {})(
-                                <Cascader options={options} placeholder="姓名、工号" />
+                            {getFieldDecorator(`employeeMsg`, {})(
+                                <Input placeholder="姓名、工号" />
                             )}
                         </span>
                     </div>
                     <div className="mechanismUser-form-Button">
-                        <Button type="primary" htmlType="submit">查询</Button>
+                        <Button type="primary" htmlType="submit" onClick={this.handleSearch}>查询</Button>
                         <Button style={{ marginLeft: 8 }} onClick={this.handleReset}>重置</Button>
                     </div>
                 </Form>
                 <Divider style={{ marginTop: 15, marginBottom: 15 }} />
                 <div className="tableList">
-                    <Table pagination={false} columns={columns} dataSource={data} bordered />
+                    <Table rowKey="id" pagination={false} columns={columns} dataSource={managerList} bordered />
                 </div>
                 <div className="Statistics">
-                    <span className="total">共 400 条记录 第 1 / 80 页</span>
+                    <span className="total">共 {count} 条记录 第  {num} / {Math.ceil(count / size)} 页</span>
                     <span className="Pagination text-right">
                         <LocaleProvider locale={zhCN}>
-                            <Pagination total={50} showSizeChanger showQuickJumper hideOnSinglePage defaultCurrent={1} />
+                            <Pagination
+                                total={count}
+                                showSizeChanger={true}
+                                showQuickJumper={true}
+                                hideOnSinglePage={false}
+                                current={num}
+                                pageSize={size}
+                                onChange={this.numChange}
+                                onShowSizeChange={this.onShowSizeChange}
+                            />
                         </LocaleProvider>
                     </span>
                 </div>
                 <Modal title="添加客户经理"
                     visible={this.state.visible1}
-                    onOk={this.handleOk}
+                    onOk={this.handleAdd}
                     okText="保存"
                     confirmLoading={confirmLoading}
                     onCancel={this.handleCancel}
                     cancelText="取消"
                     width="740px"
                     destroyOnClose={true}
-                >
+                    >
                     <Form
                         ref="form"
                         className="flex-column"
-                        onSubmit={this.handleOk}
-                    >
+                        id="mechanismForm"
+                        >
                         <Row >
                             <Col span={12}>
                                 <Form.Item
@@ -240,11 +464,10 @@ class MechanismUser extends Component {
                                     {getFieldDecorator('tel', {
                                         rules: [{ required: true, message: '请输入' }],
                                     })(
-                                        <Input placeholder="请输入" />
+                                        <Input placeholder="请输入" type="number"/>
                                     )}
                                 </Form.Item>
                             </Col>
-
                             <Col span={12}>
                                 <Form.Item
                                     {...formItemLayout}
@@ -264,20 +487,21 @@ class MechanismUser extends Component {
                                     {...formItemLayout}
                                     label="真实姓名："
                                 >
-                                    {getFieldDecorator('real-name', {
+                                    {getFieldDecorator('realName', {
                                         rules: [{ required: true, message: '请输入' }],
                                     })(
                                         <Input placeholder="请输入" />
                                     )}
                                 </Form.Item>
                             </Col>
-
                             <Col span={12}>
                                 <Form.Item
                                     {...formItemLayout}
                                     label="资产："
                                 >
-                                    <Input placeholder="请输入" />
+                                   {getFieldDecorator('money', {})(
+                                        <Input placeholder="请输入" />
+                                    )}
                                 </Form.Item>
                             </Col>
                         </Row>
@@ -287,11 +511,49 @@ class MechanismUser extends Component {
                                     {...formItemLayout}
                                     label="维护人员："
                                 >
-                                    {getFieldDecorator('maintain', {
+                                    {getFieldDecorator('userId', {
                                         rules: [{ required: true, message: '请选择' }],
                                     })(
-                                        <Input placeholder="请选择" />
-                                    )}
+                                        <Select
+                                        //未找到维护人员
+                                            onBlur={() => {
+                                                if (!this.state.userId) {
+                                                    this.setState({
+                                                        value: ""
+                                                    })
+                                                }
+                                            }}
+                                            allowClear={true}
+                                            onChange={(e) => {
+                                                console.log(e)
+                                                let find = false;
+                                                this.state.userList.forEach((item, key) => {
+                                                    //如果找到对应的维护人员ID
+                                                    if (e === item.id.toString()) {
+                                                        find = true;
+                                                        this.setState({
+                                                            value: item.userName,
+                                                            userId: e
+                                                        },()=>{
+                                                            this.props.form.setFieldsValue({userId:this.state.value})
+                                                            });    
+                                                    }
+                                                });
+                                                !find && this.setState({
+                                                    value: e,
+                                                    userId: null,
+                                                });
+                                            }}
+                                            mode={'combobox'}
+                                            style={{ width: '100%' }}
+                                            placeholder="请选择"
+                                            showArrow={true}
+                                            showSearch={true}
+                                            filterOption={(input, option) => option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0}
+                                        >
+                                            {children}
+                                        </Select>
+                                     )}  
                                 </Form.Item>
                             </Col>
                             <Col span={12}>
@@ -299,10 +561,10 @@ class MechanismUser extends Component {
                                     {...formItemLayout}
                                     label="是否员工"
                                 >
-                                    {getFieldDecorator('staff', {
-                                        rules: [{ required: true, message: '请输入' }],
+                                    {getFieldDecorator('isEmployee', {
+                                        rules: [{ required: true, message: '请选择' }],
                                     })(
-                                        <Cascader options={option} placeholder="请选择" />
+                                        <Cascader options={option} placeholder="请选择"/>
                                     )}
                                 </Form.Item>
                             </Col>
@@ -314,25 +576,26 @@ class MechanismUser extends Component {
                                     wrapperCol={{ span: 20 }}
                                     label="备注"
                                 >
-                                    <TextArea rows={4} placeholder="请输入" />
+                                   {getFieldDecorator('remark', {})(
+                                    <TextArea rows={4} placeholder="请输入"  id="remark"/>
+                                    )}
                                 </Form.Item>
                             </Col>
                         </Row>
                     </Form>
                 </Modal>
-                <Modal title="【姓名】设置AQ分成比例"
+                <Modal title={'【'+userName+'】设置AQ分成比例'}
                     visible={this.state.visible2}
-                    onOk={this.handleOk}
+                    onOk={this.handleEdit}
                     okText="保存"
                     confirmLoading={confirmLoading}
                     onCancel={this.handleCancel}
                     cancelText="取消"
                     destroyOnClose="true"
-                >
+                    >
                     <Form
                         ref="form"
                         className="flex-column"
-                        onSubmit={this.handleOk}
                     >
                         <Form.Item
                             labelCol={{ span: 4 }}
@@ -345,7 +608,7 @@ class MechanismUser extends Component {
                                         { required: true, message: '请输入' },
                                     ],
                                 })(
-                                    <Input placeholder="0.1800" />
+                                    <Input placeholder="0.1800" type="number"/>
                                 )}
                             </Tooltip>
                         </Form.Item>
@@ -353,16 +616,17 @@ class MechanismUser extends Component {
                 </Modal>
                 <Modal title="编辑客户经理"
                     visible={this.state.visible3}
+                    onOk={this.handleEditManager}
                     onCancel={this.handleCancel}
                     cancelText="取消"
                     width="740px"
                     okText="保存"
                     destroyOnClose={true}
-                >
+                    >
                     <Form
                         ref="form"
                         className="flex-column"
-                        onSubmit={this.handleOk}
+                        id="edit"
                     >
                         <Row >
                             <Col span={12}>
@@ -370,16 +634,19 @@ class MechanismUser extends Component {
                                     {...formItemLayout}
                                     label="ID号："
                                 >
-                                    <Input placeholder="请输入" disabled/>
+                                 {getFieldDecorator('managerId', {})(
+                                    <Input disabled />
+                                )}
                                 </Form.Item>
                             </Col>
-
                             <Col span={12}>
                                 <Form.Item
                                     {...formItemLayout}
                                     label="登录手机："
                                 >
-                                    <Input placeholder="请输入" disabled/>
+                                {getFieldDecorator('telphone', {})(
+                                    <Input disabled />
+                                )}
                                 </Form.Item>
                             </Col>
                         </Row>
@@ -389,16 +656,19 @@ class MechanismUser extends Component {
                                     {...formItemLayout}
                                     label="用户名："
                                 >
-                                    <Input placeholder="请输入" disabled/>
+                                    {getFieldDecorator('username', {})(
+                                    <Input disabled />
+                                    )}
                                 </Form.Item>
                             </Col>
-
                             <Col span={12}>
                                 <Form.Item
                                     {...formItemLayout}
                                     label="真实姓名："
                                 >
-                                    <Input placeholder="请输入" disabled/>
+                                    {getFieldDecorator('realName', {})(
+                                    <Input disabled />
+                                    )}
                                 </Form.Item>
                             </Col>
                         </Row>
@@ -408,7 +678,9 @@ class MechanismUser extends Component {
                                     {...formItemLayout}
                                     label="VIP分成比例："
                                 >
-                                    <Input placeholder="请输入" disabled/>
+                                   {getFieldDecorator('managerDivideScale', {})(
+                                    <Input disabled />
+                                    )}
                                 </Form.Item>
                             </Col>
                             <Col span={12}>
@@ -416,10 +688,48 @@ class MechanismUser extends Component {
                                     {...formItemLayout}
                                     label="维护人员："
                                 >
-                                    {getFieldDecorator('manager', {
+                                    {getFieldDecorator('userId', {
                                         rules: [{ required: true, message: '请选择' }],
                                     })(
-                                        <Cascader options={option} placeholder="请选择" />
+                                        <Select
+                                        //未找到维护人员
+                                            onBlur={() => {
+                                                if (!this.state.userId) {
+                                                    this.setState({
+                                                        value: ""
+                                                    })
+                                                }
+                                            }}
+                                            allowClear={true}
+                                            onChange={(e) => {
+                                                console.log(e)
+                                                let find = false;
+                                                this.state.userList.forEach((item, key) => {
+                                                    //如果找到对应的维护人员ID
+                                                    if (e === item.id.toString()) {
+                                                        find = true;
+                                                        this.setState({
+                                                            value: item.userName,
+                                                            userId: e
+                                                        },()=>{
+                                                            this.props.form.setFieldsValue({userId:this.state.value})
+                                                            });    
+                                                    }
+                                                });
+                                                !find && this.setState({
+                                                    value: e,
+                                                    userId: null,
+                                                });
+                                            }}
+                                            mode={'combobox'}
+                                            style={{ width: '100%' }}
+                                            placeholder="请选择"
+                                            showArrow={true}
+                                            showSearch={true}
+                                            filterOption={(input, option) => option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0}
+                                        >
+                                            {children}
+                                        </Select>
                                     )}
                                 </Form.Item>
                             </Col>
@@ -430,7 +740,9 @@ class MechanismUser extends Component {
                                     {...formItemLayout}
                                     label="资产："
                                 >
-                                    <Input placeholder="请输入" />
+                                 {getFieldDecorator('account', {})(
+                                    <Input placeholder="请输入" type="number"/>
+                                    )}
                                 </Form.Item>
                             </Col>
                             <Col span={12}>
@@ -438,11 +750,12 @@ class MechanismUser extends Component {
                                     {...formItemLayout}
                                     label="是否员工"
                                 >
-                                    {getFieldDecorator('manager', {
+                                    {getFieldDecorator('Employee', {
+                                        initialValue:[isEmployee === 2 ? "2":"1"],                                        
                                         rules: [{ required: true, message: '请选择' }],
                                     })(
                                         <Cascader options={option} placeholder="请选择" />
-                                    )}
+                                 )}
                                 </Form.Item>
                             </Col>
                         </Row>
@@ -453,21 +766,23 @@ class MechanismUser extends Component {
                                     wrapperCol={{ span: 20 }}
                                     label="备注"
                                 >
+                                {getFieldDecorator('remarks', {})(
                                     <TextArea rows={4} placeholder="请输入" />
+                                    )}
                                 </Form.Item>
                             </Col>
                         </Row>
                     </Form>
                 </Modal>
-                <Modal title="对【登陆手机】重置密码"
+                <Modal title={'【'+loginTel+'】重置密码'}
                     visible={this.state.visible4}
-                    onOk={this.handleOk}
+                    onOk={this.handleResetPsw}
                     okText="确认"
                     confirmLoading={confirmLoading}
                     onCancel={this.handleCancel}
                     cancelText="取消"
-                >
-                  <p>确认重置密码为手机后6位？</p>
+                    >
+                    <p>确认重置密码为手机后6位？</p>
                 </Modal>
                 <Modal title="机构用户详情"
                     visible={this.state.visible5}
@@ -476,7 +791,7 @@ class MechanismUser extends Component {
                     width="740px"
                     className="dd"
                     destroyOnClose={true}
-                >
+                    >
                     <Form
                         ref="form"
                         className="flex-column"
@@ -488,7 +803,7 @@ class MechanismUser extends Component {
                                     {...formItemLayout}
                                     label="ID号："
                                 >
-                                    <Input placeholder="请输入" />
+                                   {getFieldDecorator('manageId', {})(<Input  disabled />)}
                                 </Form.Item>
                             </Col>
 
@@ -497,7 +812,7 @@ class MechanismUser extends Component {
                                     {...formItemLayout}
                                     label="登录手机："
                                 >
-                                    <Input placeholder="请输入" />
+                                   {getFieldDecorator('Tel', {})(<Input  disabled />)}
                                 </Form.Item>
                             </Col>
                         </Row>
@@ -507,7 +822,7 @@ class MechanismUser extends Component {
                                     {...formItemLayout}
                                     label="用户名："
                                 >
-                                    <Input placeholder="请输入" />
+                                    {getFieldDecorator('userName', {})(<Input  disabled />)}
                                 </Form.Item>
                             </Col>
 
@@ -516,7 +831,7 @@ class MechanismUser extends Component {
                                     {...formItemLayout}
                                     label="真实姓名："
                                 >
-                                    <Input placeholder="请输入" />
+                                    {getFieldDecorator('rename', {})(<Input  disabled />)}
                                 </Form.Item>
                             </Col>
                         </Row>
@@ -526,7 +841,7 @@ class MechanismUser extends Component {
                                     {...formItemLayout}
                                     label="VIP分成比例："
                                 >
-                                    <Input placeholder="请输入" />
+                                    {getFieldDecorator('Divide', {})(<Input  disabled />)}
                                 </Form.Item>
                             </Col>
                             <Col span={12}>
@@ -534,7 +849,7 @@ class MechanismUser extends Component {
                                     {...formItemLayout}
                                     label="维护人员："
                                 >
-                                    <Input placeholder="请选择" />
+                                    {getFieldDecorator('User', {})(<Input  disabled />)}
                                 </Form.Item>
                             </Col>
                         </Row>
@@ -544,7 +859,7 @@ class MechanismUser extends Component {
                                     {...formItemLayout}
                                     label="资产："
                                 >
-                                    <Input placeholder="请输入" />
+                                    {getFieldDecorator('Money', {})(<Input  disabled />)}
                                 </Form.Item>
                             </Col>
                             <Col span={12}>
@@ -552,7 +867,7 @@ class MechanismUser extends Component {
                                     {...formItemLayout}
                                     label="是否员工"
                                 >
-                                   <Input placeholder="请选择" />
+                                     {getFieldDecorator('isStaff', {})(<Input  disabled />)}
                                 </Form.Item>
                             </Col>
                         </Row>
@@ -563,7 +878,8 @@ class MechanismUser extends Component {
                                     wrapperCol={{ span: 20 }}
                                     label="备注"
                                 >
-                                    <TextArea rows={4} placeholder="请输入" />
+                                 {getFieldDecorator('remarkS', {})(  <TextArea rows={4} disabled/>)}
+                                  
                                 </Form.Item>
                             </Col>
                         </Row>

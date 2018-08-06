@@ -4,7 +4,7 @@ import zhCN from 'antd/lib/locale-provider/zh_CN';
 import './strategySelf.css';
 import $ from 'jquery';
 import ServerHandle from '../../../utils/ApiHandle';
-import Emit from '../../../utils/Emit';
+// import Emit from '../../../utils/Emit';
 
 /**自营策略 */
 const options = [{
@@ -21,11 +21,11 @@ const options = [{
 class StrategySelf extends Component {
     constructor(props) {
         super(props);
-        this.showModal1 = this.showModal1.bind(this);
-        this.showModal2 = this.showModal2.bind(this);
-        this.showModal3 = this.showModal3.bind(this);
-        this.showModal4 = this.showModal4.bind(this);
-        this.showModal5 = this.showModal5.bind(this);
+        this.add = this.add.bind(this);
+        this.shelves = this.shelves.bind(this);
+        this.disuse = this.disuse.bind(this);
+        this.edit = this.edit.bind(this);
+        this.share = this.share.bind(this);
         this.bindData = this.bindData.bind(this);
         this.searchStrategy = this.searchStrategy.bind(this);
         this.addAdvider = this.addAdvider.bind(this);
@@ -38,7 +38,6 @@ class StrategySelf extends Component {
         this.shareSizeChange = this.shareSizeChange.bind(this);
         this.shareNumChange = this.shareNumChange.bind(this);
         this.shareQuery = this.shareQuery.bind(this);
-        this.onSelectAll=this.onSelectAll.bind(this);
         this.state = {
             //visible对话框是否可见
             modal1visible: false,
@@ -48,94 +47,95 @@ class StrategySelf extends Component {
             modal5visible: false,
             confirmLoading: false,
             value: 3,
-            //参与体验
-            checked: false,
-            //自营策略列表
-            dataList: [],
-            //策略列表总数
-            count: 0,
-            //分享策略总数
-            shareCount: 0,
-            //策略id
-            adviserId: '',
-            //上/下架状态  1-上架 2-下架 3-弃用
-            status: '',
-            //是否推荐所有客户经理id
-            allChecked: '0',
-            //客户经理对象列表
-            managerList: [],
-            //推荐的客户经理id集合
-            userIds: [],
-            //策略列表分页页数
-            num: 1,
-            //策略列表每页条数
-            size: 20,
-            //
+            checked: false, //参与体验
+            dataList: [],  //自营策略列表
+            count: 0,     //策略列表总数
+            shareCount: 0,//分享策略总数
+            adviserId: '', //策略id
+            adviserName:'',//策略名称
+            status: '', //上/下架状态  1-上架 2-下架 3-弃用
+            allChecked: '0', //是否推荐所有客户经理id
+            managerList: [],   //客户经理对象列表
+            userIds: [], //推荐的客户经理id集合
+            num:1, //策略列表分页页数
+            size: 20,    //策略列表每页条数
             selectedRowKeys: [],
         }
     }
-    showModal1 = (id) => {
+    add(){
         //添加策略
         this.setState({ modal1visible: true, checked: false });
     }
-    showModal2 = (id, state) => {
+    shelves(text){
         //上/下架
-        this.setState({ modal2visible: true, adviserId: id, status: state },
+        console.log(text);
+        this.setState({ modal2visible: true, adviserId: text.id, status: text.status,adviserName:text.strategyName },
             () => {
-                console.log(this.state.adviserId, this.state.status)
+                console.log(this.state.adviserId, this.state.status,this.state.adviserName)
             });
     }
-    showModal3 = (id, state) => {
+    disuse(text){
         //弃用
-        this.setState({ modal3visible: true, adviserId: id, status: state },
+        this.setState({ modal3visible: true, adviserId: text.id, status: text.status,adviserName:text.strategyName },
             () => {
                 console.log(this.state.adviserId, this.state.status)
             });
     }
-    showModal4 = (id) => {
+    edit (text){
         //编辑策略(查询单个策略)
-        this.setState({ modal4visible: true, adviserId: id,checked:false },
+        this.setState({ modal4visible: true, adviserId: text.id,checked:false, adviserName:text.strategyName},
             () => {
                 ServerHandle.GET({
                     url: '/web/strategys/getStrategys',
                     data: { id: this.state.adviserId }
                 }).then(result => {
                     if (result.success) {
-                        $('#experience').val(result.data.experienceDay);
-                        $('#strategyName').val(result.data.strategyName);
-                        $("#publisherName").val(result.data.publisherName);
-                        $('#price').val(result.data.price);
-                        $('#totalPrice').val(result.data.totalPrice);
+                        this.props.form.setFieldsValue({
+                            experience:result.data.experienceDay ,
+                            strategyName:result.data.strategyName,
+                            publisherName:result.data.publisherName,
+                            price:result.data.price,
+                            totalPrice:result.data.totalPrice,
+                        });
                     }
                 })
             });
-
     }
-    showModal5 = (id) => {
-        //分享策略列表接口
-        console.log(id)
+    share(text) {
+        //分享策略分享群体接口
         ServerHandle.GET({
             url:'/web/strategys/pushStrategy',
-            data:{strategysId:id}
+            data:{strategysId:text.id}
         }).then(result=>{
             if(result.success){
-                console.log(result)
+               this.setState({value:result.data.sharingGroup})
+            }else{
+                this.setState({value:0},()=>{
+                    message.error(result.message);
+                    $(".ant-modal-footer button").attr("disabled",true);
+                })
             }
         })
+        //分享策略列表接口        
         let managerMsg = $('#managerMsg').val()
-        this.setState({ modal5visible: true, adviserId: id });
+        this.setState({ modal5visible: true, adviserId: text.id,adviserName:text.strategyName });
         ServerHandle.GET({
             url: '/web/strategys/pageStrategysPushVO',
             data: {
                 pageNum: this.state.num,
                 pageSize: this.state.size,
                 managerMsg: managerMsg,
-                strategysId:id,
+                strategysId:text.id,
             }
         }).then(result => {
             if (result.success) {
-                console.log(result)
-                this.setState({ managerList: result.data, shareCount: result.count })
+                console.log(result.data)
+                console.log(result.data[0].pushIds)
+                this.setState({ 
+                    managerList: result.data, 
+                    shareCount: result.count,
+                    userIds:result.data[0].pushIds,
+                 },()=>{console.log(this.state.userIds)})
             }
         })
     }
@@ -166,18 +166,15 @@ class StrategySelf extends Component {
         this.setState({ num: 1, size: 20 })
         this.bindData();
     }
-    addAdvider(e) {
+    addAdvider() {
         //添加策略接口
-        e.preventDefault();
         this.props.form.validateFields((err, values) => {
-            console.log('Received values of form: ', values);
         });
         var experience = $('#experienceDay').val();
         var strategyName = $('#strategyName').val();
         var publisherName = $("#publisherName").val();
         var price = $('#price').val();
         var totalPrice = $("#totalPrice").val()
-        console.log(experience, strategyName);
         ServerHandle.POST({
             url: '/web/strategys/addStrategys',
             data: {
@@ -196,11 +193,11 @@ class StrategySelf extends Component {
                         modal1visible: false,
                         confirmLoading: false,
                     });
-                    message.success("添加成功")
+                    message.success("添加成功");
+                    this.bindData();
                 }, 2000)
             } else {
                 message.error("添加失败");
-                // this.setState({modal1visible:false})
             }
         })
     }
@@ -396,22 +393,33 @@ class StrategySelf extends Component {
         this.showModal5(this.state.adviserId);
         this.setState({ num: 1 })
     }
-    onSelectAll(selected, selectedRows, changeRows){
-        // console.log(selected, selectedRows, changeRows)
-    }
+    // onSelectAll(selected, selectedRows, changeRows){}
     render() {
-        const { confirmLoading, dataList, managerList, count, shareCount, status } = this.state;
+        const { confirmLoading, dataList, selectedRowKeys,managerList, count, shareCount, status,adviserName } = this.state;
         const { getFieldDecorator } = this.props.form;
         const formItemLayout = {
             labelCol: { span: 4 },
             wrapperCol: { span: 14 },
         }
         const rowSelection = {
+            selectedRowKeys,
+            hideDefaultSelections: true,
+            // onSelect:(record,selected,selectedRows,nativeEvent)=>{
+            //     console.log(record,selected,selectedRows,nativeEvent);
+            // },
             onChange: (selectedRowKeys, selectedRows) => {
-                this.setState({ userIds: selectedRowKeys },
-                )
+                console.log(selectedRowKeys,selectedRows)
+                this.setState({selectedRowKeys},()=>{
+                })
             },
-
+            selections:[{
+                key:'checked',
+                text:'已分享',
+                onSelect:()=>{
+                    
+                }
+            }],
+            onSelection: this.onSelection,
         };
         const columns = [{
                 title: '策略ID',
@@ -473,17 +481,13 @@ class StrategySelf extends Component {
                 render: text => (
                     <Dropdown disabled={text.status === "弃用"} overlay={
                         <Menu>
-                            <Menu.Item>
-                                <a onClick={() => {this.showModal2(text.id, text.status); }}>{text.status ==="下架"?"上架" :"下架"}</a>
+                            <Menu.Item onClick={() => {this.shelves(text); }}>{text.status ==="下架"?"上架" :"下架"}
                             </Menu.Item>
-                            <Menu.Item>
-                                <a onClick={() => { this.showModal3(text.id, text.status) }}>弃用</a>
+                            <Menu.Item onClick={() => { this.disuse(text)}}>弃用
                             </Menu.Item>
-                            <Menu.Item>
-                                <a onClick={() => { this.showModal4(text.id) }}>编辑</a>
+                            <Menu.Item onClick={() => { this.edit(text) }}>编辑
                             </Menu.Item>
-                            <Menu.Item>
-                                <a onClick={() => { this.showModal5(text.id) }} >分享</a>
+                            <Menu.Item onClick={() => { this.share(text) }} >分享
                             </Menu.Item>
                         </Menu>
                     }>
@@ -524,7 +528,7 @@ class StrategySelf extends Component {
         return (
             <div className="strategySelf">
                 <div className="strategy-query">
-                    <Button type="primary" icon="plus" onClick={this.showModal1} className="primary-btn">添加策略</Button>
+                    <Button type="primary" icon="plus" onClick={this.add} className="primary-btn">添加策略</Button>
                     <Divider style={{ marginTop: 15, marginBottom: 15 }} />
                 </div>
                 <Form
@@ -554,7 +558,7 @@ class StrategySelf extends Component {
                 </Form>
                 <Divider style={{ marginTop: 15, marginBottom: 15 }} />
                 <div className="tableList strategyTable">
-                    <Table rowKey="id" id="strategyTable" pagination={false} columns={columns} dataSource={dataList} bordered  onSelectAll={this.onSelectAll}/>
+                    <Table  rowKey="id" id="strategyTable" pagination={false} columns={columns} dataSource={dataList} bordered  />
                 </div>
                 <div className="Statistics">
                     <span className="total">共{count}条记录 第 {this.state.num} / {Math.ceil(count / this.state.size)} 页</span>
@@ -575,13 +579,13 @@ class StrategySelf extends Component {
                 </div>
                 {/* 对话框 */}
                 <Modal title="添加策略"
-                        visible={this.state.modal1visible}
-                        onOk={this.addAdvider}
-                        okText="保存"
-                        confirmLoading={confirmLoading}
-                        onCancel={this.handleCancel}
-                        cancelText="取消"
-                        destroyOnClose={true}
+                    visible={this.state.modal1visible}
+                    onOk={this.addAdvider}
+                    okText="保存"
+                    confirmLoading={confirmLoading}
+                    onCancel={this.handleCancel}
+                    cancelText="取消"
+                    destroyOnClose={true}
                     >
                     <Form
                         ref="form"
@@ -664,17 +668,17 @@ class StrategySelf extends Component {
                         </Form.Item>
                     </Form>
                 </Modal>
-                <Modal title="【策略名称】上下架操作"
-                        visible={this.state.modal2visible}
-                        onOk={this.handleshelves}
-                        okText="确认"
-                        confirmLoading={confirmLoading}
-                        onCancel={this.handleCancel}
-                        cancelText="取消"
+                <Modal title={'【'+adviserName+'】'+(status ==="下架"?"上架操作" :"下架操作")}
+                    visible={this.state.modal2visible}
+                    onOk={this.handleshelves}
+                    okText="确认"
+                    confirmLoading={confirmLoading}
+                    onCancel={this.handleCancel}
+                    cancelText="取消"
                     >
                     <p>确认{status === "下架" ? "上架" : "下架"}策略？</p>
                 </Modal>
-                <Modal title="【策略名称】弃用操作"
+                <Modal title={'【'+adviserName+'】弃用操作'}
                         visible={this.state.modal3visible}
                         onOk={this.disusehandle}
                         okText="确认"
@@ -684,7 +688,7 @@ class StrategySelf extends Component {
                     >
                     <p>弃用后，不可再次恢复使用</p>
                 </Modal>
-                <Modal title="编辑策略【策略名称】"
+                <Modal title={'编辑策略【'+adviserName+'】'}
                         visible={this.state.modal4visible}
                         onOk={this.editHandle}
                         okText="保存"
@@ -774,7 +778,7 @@ class StrategySelf extends Component {
                         </Form.Item>
                     </Form>
                 </Modal>
-                <Modal title="分享策略【策略名称】"
+                <Modal title={'分享策略【'+adviserName+'】'}
                         visible={this.state.modal5visible}
                         onOk={this.shareHandle}
                         okText="确认分享"
@@ -782,7 +786,7 @@ class StrategySelf extends Component {
                         onCancel={this.handleCancel}
                         cancelText="取消"
                         width={900}
-                        destroyOnClose={false}
+                        destroyOnClose={true} 
                     >
                     <Radio.Group onChange={this.radioChange} value={this.state.value}>
                         <Radio value={1}>所有用户</Radio>
@@ -807,7 +811,14 @@ class StrategySelf extends Component {
                             <Button style={{ marginLeft: 8 }} onClick={this.handleReset}>重置</Button>
                         </div>
                     </Form>
-                    <Table rowKey="id" pagination={false} rowSelection={rowSelection} columns={columnsM} dataSource={managerList} className="checkedtable" />
+                    <Table 
+                        rowKey="id"
+                        pagination={false}
+                        rowSelection={rowSelection}
+                        columns={columnsM} 
+                        dataSource={managerList}
+                        className="checkedtable" 
+                       />
                     <div className="Statistics">
                         <span className="total">共{shareCount}条记录 第 {this.state.num} / {Math.ceil(shareCount / this.state.size)}页</span>
                         <span className="Pagination text-right">

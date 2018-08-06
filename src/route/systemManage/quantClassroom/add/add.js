@@ -6,6 +6,11 @@ import $ from 'jquery';
 import ServerHandle from '../../../../utils/ApiHandle';
 import Emit from '../../../../utils/Emit';
 
+function getBase64(img, callback) {
+    const reader = new FileReader();
+    reader.addEventListener('load', () => callback(reader.result));
+    reader.readAsDataURL(img);
+}
 class Add extends Component {
     /**
      * 上传图片
@@ -14,40 +19,27 @@ class Add extends Component {
         super(props);
         this.handleCancel = this.handleCancel.bind(this);
         this.handleReset = this.handleReset.bind(this);//取消按钮
-        this.handleSubmit = this.handleSubmit.bind(this)//表单提交
-        this.handleRawChange = this.handleRawChange.bind(this)//富文本
-        this.imgUpload=this.imgUpload.bind(this)//上传图片
-        this.handleUpload=this.handleUpload.bind(this)
+        this.handlePreservation = this.handlePreservation.bind(this)
+        this.handleUpload = this.handleUpload.bind(this)
         this.state = {
-            previewVisible: false,
-            previewImage: '',
-            fileList: [{
-                uid: -1,
-                name: '',
-                status: 'done',
-                response: '',
-                url: 'https://aq-images.oss-cn-shenzhen.aliyuncs.com/quantized/20180718/20180718160337296532251.gif',
-            }],
+            loading: false,
+            imageUrl: '',
             rowContent: '',
             dataList: [],//获取的客户经理数据
             value: '',//客户经理realName
-            key: '',//客户经理id
             manaegerID: [],
 
         }
     }
-    imgUpload(){
-
-    }
     componentDidMount() {
         console.log(this);
-        console.log(this.state.fileList[0].url)
         Emit.emit("target");
         ServerHandle.GET({
             url: '/web/manager/listAll',
             data: {}
         }).then(result => {
             if (result.success) {
+                console.log(result)
                 this.setState({ dataList: result.data })
             }
             else {
@@ -56,7 +48,7 @@ class Add extends Component {
         })
     }
     handleReset() {
-        console.log(2)
+        console.log(this)
         const _this = this;
         this.props.form.resetFields();
         Modal.confirm({
@@ -83,71 +75,75 @@ class Add extends Component {
         console.log(fileList)
         this.setState({ fileList });
     }
-    handleSubmit(e) {
-        console.log(1)
-        e.preventDefault();
+    handlePreservation() {
         this.props.form.validateFields((err, values) => {
-          console.log('Received values of form: ', values);
+            let title = $('#title').val();
+            let urlVideo = $('#urlVideo').val();
+            let introduction = $("#introduction").val();
+            console.log(introduction)
+            ServerHandle.POST(
+                {
+                    url: `/web/quantized/add`,
+                    data: {
+                        managerId: this.state.manaegerID,
+                        title: encodeURI(title),
+                        urlImage: encodeURI(this.state.imageUrl),
+                        urlVideo: encodeURI(urlVideo),
+                        introduction: encodeURI(this.state.rowContent),
+                    }
+                }).then(result => {
+                    if (result.success) {
+                        message.success('保存成功');
+                        this.props.history.push('/index/quantClassroom')
+                    } else {
+                        message.error(result.message);
+                    }
+                })
         });
-        var title = $('#title').val();
-        var urlVideo = $('#urlVideo').val();
-        ServerHandle.POST(
-            {
-                url: `/web/quantized/add`,
-                data: {
-                    managerId: this.state.manaegerID,
-                    title: title,
-                    urlImage: this.state.fileList[0].url,
-                    urlVideo: urlVideo,
-                    introduction: this.state.rowContent,
-                }
-            }).then(result => {
-                if (result.success) {
-                    message.success('保存成功');
-                    this.props.history.push('/index/quantClassroom')
-                }else {
-                    message.error(result.message);
-                }
-            })
-    }
-    normFile = (e) => {
-        console.log('Upload event:', e);
-        if (Array.isArray(e)) {
-            return e;
-        }
-        return e && e.fileList;
     }
     //富文本
     handleChange = (content) => {
-        this.setState({ rowContent: content });
+        console.log(content)
+        this.setState({ rowContent: content }, () => { console.log(this.state.rowContent) });
     }
-    handleRawChange(rawContent) {
-        console.log(rawContent);
-    }
+    /**
+         * 上传图片
+         */
+    handleUpload = (info) => {
+        console.log(info.file.response);
+        if (info.file.status === 'uploading') {
+            this.setState({ loading: true, });
+            return;
+        }
+        if (info.file.status === 'done') {
+            getBase64(info.file.originFileObj, imageUrl => this.setState({
+                imageUrl: info.file.response.data,
+                loading: false,
+            }, () => { console.log(this.state.imageUrl) }));
+        }
 
+    }
     render() {
         const { getFieldDecorator } = this.props.form;
+        const { dataList } = this.state;
         const formItemLayout = {
             labelCol: { span: 2 },
             wrapperCol: { span: 8 },
         };
-        const { previewVisible, previewImage, fileList, dataList } = this.state;
         //图片上传
         const uploadButton = (
             <div>
-                <Icon type="plus" />
+                <Icon type={this.state.loading ? 'loading' : 'plus'} />
                 <div className="ant-upload-text">Upload</div>
             </div>
-        );
+        )
         //富文本
         const editorProps = {
             height: 500,
             contentFormat: 'html',
             initialContent: '<p></p>',
             onChange: this.handleChange,
-            onRawChange: this.handleRawChange
         };
-
         const children = [];
         const Option = Select.Option;
         dataList.forEach((item, index) => {
@@ -162,7 +158,7 @@ class Add extends Component {
                         label="客户经理："
                     >
                         <Select
-                        //未找到客户经理，客户经理为空
+                            //未找到客户经理，客户经理为空
                             onBlur={() => {
                                 if (!this.state.manaegerID) {
                                     this.setState({
@@ -216,21 +212,16 @@ class Add extends Component {
                     >
                         {getFieldDecorator('urlImage', {
                         })(
-                            <div className="clearfix">
-                                <Upload
-                                    action="/web/oss/ImageUpload/upload"
-                                    // action={this.imgUpload}
-                                    listType="picture-card"
-                                    fileList={fileList}
-                                    onPreview={this.handlePreview}//点击文件链接或图标预览
-                                    onChange={this.handleUpload}//上传文件
-                                >
-                                    {fileList.length >= 1 ? null : uploadButton}
-                                </Upload>
-                                <Modal visible={previewVisible} footer={null} onCancel={this.handleCancel}>
-                                    <img alt="example" style={{ width: '100%' }} src={previewImage} />
-                                </Modal>
-                            </div>
+                            <Upload
+                                name="filename"
+                                listType="picture-card"
+                                className="avatar-uploader"
+                                showUploadList={false}
+                                action="/web/oss/ImageUpload/upload"
+                                onChange={this.handleUpload}
+                            >
+                                {this.state.imageUrl ? <img src={this.state.imageUrl} alt="avatar" /> : uploadButton}
+                            </Upload>
                         )}
                     </Form.Item>
                     <Form.Item
@@ -248,7 +239,7 @@ class Add extends Component {
                         label="课堂简介："
                     >
                         {getFieldDecorator('introduction', {
-                          rules: [{ required: true, message: '请输入' }],
+                            rules: [{ required: true, message: '请输入' }],
                         })(
                             <Card>
                                 <BraftEditor {...editorProps} />
@@ -258,7 +249,7 @@ class Add extends Component {
                     <Form.Item
                         wrapperCol={{ span: 8, offset: 2 }}
                     >
-                        <Button type="primary" htmlType="submit" onClick={this.handleSubmit}>保存</Button>
+                        <Button type="primary" htmlType="submit" onClick={this.handlePreservation}>保存</Button>
                         <Button style={{ marginLeft: 8 }} onClick={this.handleReset}>取消</Button>
                     </Form.Item>
                 </Form>

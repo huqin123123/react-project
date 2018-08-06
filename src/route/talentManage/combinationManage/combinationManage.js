@@ -36,6 +36,8 @@ class CombinationManage extends Component {
             adviserId: [],
             //投顾状态
             visible:'',
+            //投顾名称
+            adviserName:'',
             //投顾分享
             adviserShare:'',
             //页码
@@ -58,7 +60,6 @@ class CombinationManage extends Component {
         let sharingGroup=$('.combinationManageShare .ant-cascader-picker-label').text()
         let adviserName=$('#adviserName').val();
         let isVisible=$('.combinationManageStatus .ant-cascader-picker-label').text();
-        console.log(queryName,createTimeStart,createTimeEnd,sharingGroup,adviserName,isVisible);
         ServerHandle.GET({
             url: '/web/adviser/list',
             data: {
@@ -145,27 +146,26 @@ class CombinationManage extends Component {
             visible2: false,
         });
     }
-    showModal1 = (id,state) => {
+    shelves(text){
         /**
          * 上下架
          * id(投顾id)
          * state(1上架，2下架)
          */
-        console.log(id,state)
         this.setState(
-            { visible1: true, adviserId: id,visible:state }
+            { visible1: true, adviserId: text.id,visible:text.isVisible,adviserName:text.adviserName }
             , () => {
                 console.log(this.state.adviserId)
                 console.log(this.state.visible)
              });
     }
-    showModal2 = (id,share) => {
+    share(text){
         /**
          * 分享投顾
          * id-投顾id
          * share-投顾分享(1所有用户，2所有机构)
          */
-        this.setState({ visible2: true ,adviserId:id,adviserShare:share},
+        this.setState({ visible2: true ,adviserId:text.id,adviserShare:text.sharingGroup,adviserName:text.adviserName},
         ()=>{
             console.log(this.state.adviserId)
             console.log(this.state.adviserShare)
@@ -248,16 +248,15 @@ class CombinationManage extends Component {
                 }
             }, {
                 title: '操作',
-                dataIndex: 'operation',
+                key: 'operation',
                 render: (text, item) => {
                     return (
                         <Dropdown overlay={
                             <Menu>
-                                <Menu.Item>
-                                    <a onClick={() => { this.showModal1(item.id,item.isVisible)}}>上下架</a>
+                                <Menu.Item onClick={() => { this.shelves(text)}}>
+                                    {text.isVisible===1?'下架':(text.isVisible===2?'上架':'')}
                                 </Menu.Item>
-                                <Menu.Item>
-                                    <a onClick={() => { this.showModal2(item.id,item.sharingGroup) }}>分享</a>
+                                <Menu.Item onClick={() => { this.share(text) }}>分享
                                 </Menu.Item>
                             </Menu>
                         }>
@@ -268,7 +267,7 @@ class CombinationManage extends Component {
                     )
                 }
         }];
-        const { confirmLoading, dataList,count } = this.state;
+        const { confirmLoading, dataList,count,size,num,adviserName,visible } = this.state;
         return (
             <div className="customerList">
                 <Form
@@ -286,7 +285,7 @@ class CombinationManage extends Component {
                             </span>
                         </div>
                         <div className="flex al-center flex-row ">
-                            <span className=" text-right title-width4">创建日期：</span>
+                            <span className="text-right title-width4">创建日期：</span>
                             <span>
                                     <LocaleProvider locale={zhCN} >
                                         {getFieldDecorator('createTimeStart', {})(
@@ -319,8 +318,8 @@ class CombinationManage extends Component {
                             </span>
                         </div>
                         <div className="al-center flex flex-row ">
-                            <span className="text-right title-width">状态：</span>
-                            <span className="input-width combinationManageStatus">
+                            <span className="text-right title-width4">状态：</span>
+                            <span className="input-width ">
                                 {getFieldDecorator(`isVisible`, {})(
                                     <Cascader options={option1} placeholder="请选择" />
                                 )}
@@ -337,23 +336,23 @@ class CombinationManage extends Component {
                     <Table rowKey="id" pagination={false} columns={columns} dataSource={dataList} bordered />
                 </div>
                 <div className="Statistics">
-                    <span className="total">共{count}条记录 第 {this.state.num} / {Math.ceil(count / this.state.size)} 页</span>
+                    <span className="total">共{count}条记录 第 {num} / {Math.ceil(count / size)} 页</span>
                     <span className="Pagination text-right">
                         <LocaleProvider locale={zhCN}>
                             <Pagination 
-                             total={count}
-                             showSizeChanger={true}
-                             showQuickJumper={true}
-                             hideOnSinglePage={false}
-                             current={this.state.num}
-                             pageSize={this.state.size}
-                             onChange={this.numChange}
-                             onShowSizeChange={this.onShowSizeChange}
-                               />
+                            total={count}
+                            showSizeChanger={true}
+                            showQuickJumper={true}
+                            hideOnSinglePage={false}
+                            current={num}
+                            pageSize={size}
+                            onChange={this.numChange}
+                            onShowSizeChange={this.onShowSizeChange}
+                            />
                         </LocaleProvider>
                     </span>
                 </div>
-                <Modal title="【组合名称】上下架操作"
+                <Modal title={'['+adviserName+']'+(visible===1?'下架':(visible===2?'上架':''))+'操作'}
                     visible={this.state.visible1}
                     onOk={this.handleOk}
                     okText="确认"
@@ -361,9 +360,9 @@ class CombinationManage extends Component {
                     onCancel={this.handleCancel}
                     cancelText="取消"
                 >
-                    <p>确认上架/下架策略？</p>
+                    <p>确认{visible===1?'下架':(visible===2?'上架':'')}策略？</p>
                 </Modal>
-                <Modal title="【组合名称】分享操作"
+                <Modal title={'【'+adviserName+'】分享操作'}
                     visible={this.state.visible2}
                     onOk={this.handleShareOk}
                     okText="确认"

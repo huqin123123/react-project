@@ -1,8 +1,8 @@
 import React, { Component } from 'react';
 import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 import AddContent from '../addContent/addContent';
-import EditContnent from '../editContent/editContent'
-import Manage from '../Manage/Manage'
+import EditContnent from '../editContent/editContent';
+import ContManage from '../Manage/Manage';
 
 export default class ContentManage extends Component {
     render() {
@@ -10,9 +10,9 @@ export default class ContentManage extends Component {
             <div>
                 <Router >
                     <Switch>
-                        <Route path="/index/contentManage" exact component={Manage} />
-                        <Route path="/index/contentManage/addContent" component={AddContent} />
-                        <Route path="/index/contentManage/editContent"  component={EditContnent}/>
+                        <Route path="/index/contentManage" exact component={ContManage} />
+                        <Route path="/index/contentManage/addContent" exact component={AddContent} />
+                        <Route path="/index/contentManage/editContent" exact  component={EditContnent}/>
                     </Switch>
                 </Router>
             </div>

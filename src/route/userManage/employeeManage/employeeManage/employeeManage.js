@@ -10,7 +10,7 @@ export default class ContentManage extends Component {
                 <Router >
                     <Switch>
                         <Route path="/index/employeeManage" exact component={Manage} />
-                        <Route path="/index/employeeManage/accountFlow" exact component={AccountFlow} />
+                        <Route path="/index/employeeManage/accountFlow"  component={AccountFlow} />
                     </Switch>
                 </Router>
             </div>
